@@ -157,8 +157,9 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
 
-    const dx = (clientX - dragState.startX) / 300; // Sensitivity
-    const dy = (clientY - dragState.startY) / 400;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const dx = (clientX - dragState.startX) / rect.width;
+    const dy = (clientY - dragState.startY) / rect.height;
 
     const newOffsets = [...offsets];
     newOffsets[dragState.activeSlot] = {
@@ -329,7 +330,10 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
 
           {/* Prev Button */}
           <button
-            onClick={prevSlide}
+            onClick={(e) => {
+              e.stopPropagation();
+              prevSlide();
+            }}
             disabled={currentIndex === 0}
             className={`
               absolute left-0 z-10 p-2 rounded-full bg-white shadow-md text-gray-700 transition-opacity
@@ -341,7 +345,7 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
 
           {/* Polaroid Preview */}
           <div
-            className="w-full max-w-[300px] relative group px-2 cursor-move"
+            className="w-full max-w-[300px] relative group px-2 cursor-move select-none touch-none"
             onMouseDown={handleDragStart}
             onMouseMove={handleDragMove}
             onMouseUp={handleDragEnd}
@@ -357,6 +361,9 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
                 variant="preview"
                 isEditing={isEditing}
                 onCaptionChange={handleCaptionChange}
+                livePreview={true}
+                collageStyle={collageStyle}
+                interactiveOffsets={offsets}
               />
             </div>
 
@@ -375,7 +382,10 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
             {/* Floating Edit Button */}
             <div className="absolute bottom-20 right-6 z-20">
               <button
-                onClick={toggleEdit}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleEdit();
+                }}
                 className={`
                   w-10 h-10 rounded-full shadow-md flex items-center justify-center transition-all duration-200
                   ${isEditing
@@ -391,7 +401,10 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
 
           {/* Next Button */}
           <button
-            onClick={nextSlide}
+            onClick={(e) => {
+              e.stopPropagation();
+              nextSlide();
+            }}
             disabled={currentIndex === polaroids.length - 1}
             className={`
               absolute right-0 z-10 p-2 rounded-full bg-white shadow-md text-gray-700 transition-opacity
