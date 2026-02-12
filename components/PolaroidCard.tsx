@@ -20,6 +20,7 @@ export const PolaroidCard: React.FC<PolaroidCardProps> = ({
 }) => {
   const isPreview = variant === 'preview';
   const inputRef = useRef<HTMLInputElement>(null);
+  const [isLoaded, setIsLoaded] = React.useState(false);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -38,19 +39,31 @@ export const PolaroidCard: React.FC<PolaroidCardProps> = ({
       onClick={onClick}
     >
       {/* Image Area */}
-      <div className={`bg-gray-100 overflow-hidden ${isPreview ? 'mb-0' : 'mb-2'} aspect-[4/5]`}>
+      <div className={`bg-gray-100 overflow-hidden relative ${isPreview ? 'mb-0' : 'mb-2'} aspect-[4/5]`}>
         <img
           src={data.image}
           alt="Polaroid memory"
-          className="w-full h-full object-cover object-top transition-all duration-500"
+          className={`w-full h-full object-cover transition-all duration-700 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+          onLoad={() => setIsLoaded(true)}
           style={{
-            // Universal Analog Preview:
-            // 1. No Sepia (Preserves colors)
-            // 2. Brightness/Contrast boost (Flash effect)
-            // 3. Saturation boost (Counteracts perceived fade)
-            filter: 'contrast(1.1) brightness(1.1) saturate(1.1)'
+            filter: isPreview ? 'contrast(1.1) brightness(1.1) saturate(1.1)' : 'none'
           }}
         />
+
+        {/* Analog Overlays for Preview */}
+        {isPreview && isLoaded && (
+          <div className="absolute inset-0 pointer-events-none overflow-hidden animate-in fade-in duration-1000">
+            {/* Film Fade (Shadow Lift) */}
+            <div className="absolute inset-0 bg-[#141423] mix-blend-screen opacity-20" />
+
+            {/* Warm Sunlight Hint */}
+            <div className="absolute inset-0 bg-orange-400 mix-blend-overlay opacity-10" />
+
+            {/* Subtle Grain Overlay (using noise pattern) */}
+            <div className="absolute inset-0 opacity-[0.15] mix-blend-overlay pointer-events-none"
+              style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }} />
+          </div>
+        )}
       </div>
 
       {/* Caption Area */}

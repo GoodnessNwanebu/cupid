@@ -68,22 +68,21 @@ const createGrainPattern = (ctx: CanvasRenderingContext2D) => {
 };
 
 const drawDustSpecks = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) => {
-  const count = 3 + Math.floor(Math.random() * 4);
+  const count = 15 + Math.floor(Math.random() * 15);
   ctx.save();
   for (let i = 0; i < count; i++) {
     const dx = x + Math.random() * w;
     const dy = y + Math.random() * h;
-    const size = 1 + Math.random() * 2;
-    const opacity = 0.05 + Math.random() * 0.1;
+    const size = 1 + Math.random() * 2.5;
+    const opacity = 0.08 + Math.random() * 0.15;
 
     ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
     ctx.beginPath();
     ctx.arc(dx, dy, size, 0, Math.PI * 2);
     ctx.fill();
 
-    // Add a tiny darker speck occasionally
-    if (Math.random() > 0.7) {
-      ctx.fillStyle = `rgba(0, 0, 0, ${opacity * 0.5})`;
+    if (Math.random() > 0.6) {
+      ctx.fillStyle = `rgba(0, 0, 0, ${opacity * 0.6})`;
       ctx.beginPath();
       ctx.arc(dx + 1, dy + 1, size * 0.5, 0, Math.PI * 2);
       ctx.fill();
@@ -101,13 +100,13 @@ const applyLightLeak = (ctx: CanvasRenderingContext2D, x: number, y: number, w: 
   if (corner === 2) ly = y + h;
   if (corner === 3) { lx = x + w; ly = y + h; }
 
-  const radius = w * (0.4 + Math.random() * 0.4);
+  const radius = w * (0.5 + Math.random() * 0.5);
   const gradient = ctx.createRadialGradient(lx, ly, 0, lx, ly, radius);
 
   // Warm vintage light leak colors
-  const opacity = 0.03 + Math.random() * 0.04;
-  gradient.addColorStop(0, `rgba(255, 100, 50, ${opacity})`);
-  gradient.addColorStop(0.5, `rgba(255, 150, 50, ${opacity * 0.6})`);
+  const opacity = 0.08 + Math.random() * 0.08;
+  gradient.addColorStop(0, `rgba(255, 80, 20, ${opacity})`);
+  gradient.addColorStop(0.4, `rgba(255, 120, 40, ${opacity * 0.6})`);
   gradient.addColorStop(1, 'rgba(255, 100, 50, 0)');
 
   ctx.globalCompositeOperation = 'screen';
@@ -184,7 +183,7 @@ export const generatePolaroidImage = async (
 
         // 1. Film Fade (Shadow Lift) - Map blacks to deep charcoal
         ctx.globalCompositeOperation = 'screen';
-        ctx.fillStyle = 'rgba(15, 15, 25, 0.08)';
+        ctx.fillStyle = 'rgba(20, 20, 35, 0.15)';
         ctx.fillRect(margin, photoY, photoWidth, photoHeight);
 
         // 2. Warm Light Leak
