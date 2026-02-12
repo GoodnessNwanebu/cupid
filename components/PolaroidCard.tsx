@@ -207,7 +207,7 @@ export const PolaroidCard: React.FC<PolaroidCardProps> = ({
             <div className="absolute inset-0 bg-[#141423] mix-blend-screen opacity-20" />
 
             {/* Warm Sunlight Hint */}
-            <div className="absolute inset-0 bg-orange-400 mix-blend-overlay opacity-8" />
+            <div className="absolute inset-0 bg-orange-400 mix-blend-overlay opacity-10" />
 
             {/* Subtle Grain Overlay (using noise pattern) */}
             <div className="absolute inset-0 opacity-[0.25] mix-blend-overlay pointer-events-none"
