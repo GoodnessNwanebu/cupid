@@ -38,16 +38,16 @@ export default function App() {
 
     // Generate formatted date for the caption
     const date = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    
+
     // Create polaroids with default text (Client side only)
     const newPolaroids = uploadedFiles.map((file, index) => {
-       return {
-         id: Date.now().toString() + index,
-         image: file.previewUrl,
-         caption: "Captured Forever", // Static default caption since we removed AI
-         date: date,
-         generatedAt: Date.now()
-       } as PolaroidData;
+      return {
+        id: Date.now().toString() + index,
+        image: file.previewUrl,
+        caption: "Captured Forever", // Static default caption since we removed AI
+        date: date,
+        generatedAt: Date.now()
+      } as PolaroidData;
     });
 
     setGeneratedPolaroids(newPolaroids);
@@ -55,9 +55,11 @@ export default function App() {
   };
 
   const handleSaveAll = (memories: PolaroidData[]) => {
-    // Save to local state for "recent memories" on home screen
+    // 1. Save to local state for "recent memories" on home screen
     setRecentMemories(prev => [...memories, ...prev]);
-    // Navigate to End Screen
+    // 2. Update generatedPolaroids so EndScreen shows the HIGH-RES versions
+    setGeneratedPolaroids(memories);
+    // 3. Navigate to End Screen
     setCurrentScreen(AppScreen.END);
   };
 
@@ -80,19 +82,19 @@ export default function App() {
   return (
     <div className="font-sans text-gray-900 antialiased">
       {currentScreen === AppScreen.HOME && (
-        <HomeScreen 
-          onImagesSelected={handleImagesSelected} 
+        <HomeScreen
+          onImagesSelected={handleImagesSelected}
           recentMemories={recentMemories}
         />
       )}
-      
+
       {currentScreen === AppScreen.PROCESSING && (
         <ProcessingScreen onComplete={handleProcessingComplete} />
       )}
-      
+
       {currentScreen === AppScreen.RESULT && generatedPolaroids.length > 0 && (
-        <ResultScreen 
-          initialData={generatedPolaroids} 
+        <ResultScreen
+          initialData={generatedPolaroids}
           onBack={handleBackToHome}
           onRegenerate={handleRegenerate}
           onSave={handleSaveAll}
@@ -100,7 +102,7 @@ export default function App() {
       )}
 
       {currentScreen === AppScreen.END && (
-        <EndScreen 
+        <EndScreen
           onReturnHome={handleReturnHome}
           polaroids={generatedPolaroids}
         />

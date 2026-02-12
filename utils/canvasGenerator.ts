@@ -118,15 +118,15 @@ const applyLightLeak = (ctx: CanvasRenderingContext2D, x: number, y: number, w: 
 const drawGrainStreaks = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) => {
   const streakCount = 1 + Math.floor(Math.random() * 2); // 1-2 subtle streaks
   ctx.save();
-  ctx.lineWidth = 1 + Math.random() * 1.5;
-  ctx.globalAlpha = 0.04 + Math.random() * 0.06;
+  ctx.lineWidth = 4 + Math.random() * 4; // Thicker for 3400px canvas
+  ctx.globalAlpha = 0.08 + Math.random() * 0.07; // Slightly more visible
 
   for (let i = 0; i < streakCount; i++) {
     const sx = x + Math.random() * w;
     ctx.strokeStyle = Math.random() > 0.5 ? '#FFFFFF' : '#000000';
     ctx.beginPath();
     ctx.moveTo(sx, y);
-    ctx.lineTo(sx + (Math.random() * 10 - 5), y + h); // Slight slant
+    ctx.lineTo(sx + (Math.random() * 15 - 7.5), y + h); // Natural slant
     ctx.stroke();
   }
   ctx.restore();
@@ -170,7 +170,7 @@ export const generatePolaroidImage = async (
         // Optimized image for drawing
         const optimImage = getSteppedScaledImage(img, crop.width, crop.height);
 
-        ctx.filter = 'contrast(1.05) brightness(1.05) saturate(1.15) sepia(0.15)';
+        ctx.filter = 'contrast(1.05) brightness(1.05) saturate(1.2) sepia(0.25)';
         ctx.drawImage(
           img,
           crop.x, crop.y, crop.width, crop.height,
@@ -178,11 +178,11 @@ export const generatePolaroidImage = async (
         );
         ctx.filter = 'none';
 
-        ctx.fillStyle = 'rgba(255, 253, 248, 0.08)';
+        ctx.fillStyle = 'rgba(255, 253, 248, 0.1)';
         ctx.globalCompositeOperation = 'screen';
         ctx.fillRect(margin, photoY, photoWidth, photoHeight);
 
-        ctx.fillStyle = 'rgba(255, 180, 50, 0.08)';
+        ctx.fillStyle = 'rgba(255, 180, 50, 0.12)';
         ctx.globalCompositeOperation = 'overlay';
         ctx.fillRect(margin, photoY, photoWidth, photoHeight);
 
@@ -191,7 +191,7 @@ export const generatePolaroidImage = async (
           width / 2, photoY + photoHeight / 2, photoWidth * 0.95
         );
         gradient.addColorStop(0, 'rgba(0,0,0,0)');
-        gradient.addColorStop(1, 'rgba(30,20,10,0.2)');
+        gradient.addColorStop(1, 'rgba(30,20,10,0.25)');
         ctx.fillStyle = gradient;
         ctx.globalCompositeOperation = 'multiply';
         ctx.fillRect(margin, photoY, photoWidth, photoHeight);
