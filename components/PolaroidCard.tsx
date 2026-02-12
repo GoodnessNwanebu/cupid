@@ -200,8 +200,8 @@ export const PolaroidCard: React.FC<PolaroidCardProps> = ({
           />
         )}
 
-        {/* Analog Overlays for Preview */}
-        {isPreview && isLoaded && (
+        {/* Analog Overlays for Preview - Hidden during Live Panning for functional feel */}
+        {isPreview && isLoaded && !livePreview && (
           <div className="absolute inset-0 pointer-events-none overflow-hidden animate-in fade-in duration-1000">
             {/* Film Fade (Shadow Lift) */}
             <div className="absolute inset-0 bg-[#141423] mix-blend-screen opacity-20" />

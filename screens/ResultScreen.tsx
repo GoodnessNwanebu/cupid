@@ -24,141 +24,24 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [collageStyle, setCollageStyle] = useState<CollageStyle>(CollageStyle.GRID);
-  const [isRegenerating, setIsRegenerating] = useState(false);
   const [offsets, setOffsets] = useState<{ x: number, y: number }[]>(
     initialData[0].imageOffsets || Array(initialData[0].sourceImages?.length || 4).fill({ x: 0.5, y: 0.5 })
   );
   const [dragState, setDragState] = useState<{ activeSlot: number, startX: number, startY: number, startOffset: { x: number, y: number } } | null>(null);
-
-  // Cache for static baked images (Style -> ImageUrl)
-  const [imageCache, setImageCache] = useState<Record<string, Record<string, string>>>({});
-
   const currentPolaroid = polaroids[currentIndex];
 
-  // Initialize Cache on mount
-  React.useEffect(() => {
-    const preBake = async () => {
-      const newCache: Record<string, Record<string, string>> = {};
-
-      for (const p of polaroids) {
-        if (p.isCollage && p.sourceImages) {
-          const grid = await generateCollagePolaroid(
-            p.sourceImages, p.caption, p.date, CollageStyle.GRID,
-            { noFrame: true, offsets: p.imageOffsets || Array(p.sourceImages.length).fill({ x: 0.5, y: 0.5 }) }
-          );
-          const scrapbook = await generateCollagePolaroid(
-            p.sourceImages, p.caption, p.date, CollageStyle.SCRAPBOOK,
-            { noFrame: true, offsets: p.imageOffsets || Array(p.sourceImages.length).fill({ x: 0.5, y: 0.5 }) }
-          );
-          newCache[p.id] = {
-            [CollageStyle.GRID]: grid,
-            [CollageStyle.SCRAPBOOK]: scrapbook
-          };
-        }
-      }
-      setImageCache(prev => ({ ...prev, ...newCache }));
-    };
-
-    preBake();
-  }, []);
-
-  const handleStyleChange = async (newStyle: CollageStyle) => {
+  const handleStyleChange = (newStyle: CollageStyle) => {
     if (!currentPolaroid.isCollage || !currentPolaroid.sourceImages) return;
 
     setCollageStyle(newStyle);
 
-    // Sync the style to the data object so the generator sees it later
+    // Sync the style to the data object so the UI stays synced on re-render
     const updatedPolaroids = [...polaroids];
     updatedPolaroids[currentIndex] = {
       ...currentPolaroid,
       collageStyle: newStyle
     };
-
-    // Check cache first
-    const cached = imageCache[currentPolaroid.id]?.[newStyle];
-    if (cached) {
-      updatedPolaroids[currentIndex].image = cached;
-      setPolaroids(updatedPolaroids);
-      return;
-    }
-
     setPolaroids(updatedPolaroids);
-    setIsRegenerating(true);
-    try {
-      const newImage = await generateCollagePolaroid(
-        currentPolaroid.sourceImages,
-        currentPolaroid.caption,
-        currentPolaroid.date,
-        newStyle,
-        { noFrame: true, offsets: offsets }
-      );
-
-      const updatedPolaroids = [...polaroids];
-      updatedPolaroids[currentIndex] = {
-        ...currentPolaroid,
-        image: newImage
-      };
-      setPolaroids(updatedPolaroids);
-
-      // Update cache
-      setImageCache(prev => ({
-        ...prev,
-        [currentPolaroid.id]: {
-          ...(prev[currentPolaroid.id] || {}),
-          [newStyle]: newImage
-        }
-      }));
-    } catch (err) {
-      console.error("Style regeneration failed:", err);
-    } finally {
-      setIsRegenerating(false);
-    }
-  };
-
-  const regenerateWithOffsets = async (newOffsets: { x: number, y: number }[]) => {
-    // For Option D, we ONLY regenerate the current view into the cache on Drag End.
-    // This allows the static view to be correct, but doesn't block the UI while dragging.
-    try {
-      let newImage: string;
-
-      if (currentPolaroid.isCollage && currentPolaroid.sourceImages) {
-        newImage = await generateCollagePolaroid(
-          currentPolaroid.sourceImages,
-          currentPolaroid.caption,
-          currentPolaroid.date,
-          collageStyle,
-          { noFrame: true, offsets: newOffsets }
-        );
-      } else if (currentPolaroid.sourceImages?.[0]) {
-        newImage = await generatePolaroidImage(
-          currentPolaroid.sourceImages[0],
-          currentPolaroid.caption,
-          currentPolaroid.date,
-          { noFrame: true, offset: newOffsets[0] }
-        );
-      } else {
-        return;
-      }
-
-      const updatedPolaroids = [...polaroids];
-      updatedPolaroids[currentIndex] = {
-        ...currentPolaroid,
-        image: newImage,
-        imageOffsets: newOffsets
-      };
-      setPolaroids(updatedPolaroids);
-
-      // Update cache
-      setImageCache(prev => ({
-        ...prev,
-        [currentPolaroid.id]: {
-          ...(prev[currentPolaroid.id] || {}),
-          [collageStyle]: newImage
-        }
-      }));
-    } catch (err) {
-      console.error("Offset regeneration failed:", err);
-    }
   };
 
   const getSlotIndex = (e: React.MouseEvent | React.TouchEvent, rect: DOMRect) => {
@@ -196,7 +79,6 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
   };
 
   const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
-    if (isRegenerating) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const slotIdx = getSlotIndex(e, rect);
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
@@ -229,7 +111,14 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
 
   const handleDragEnd = () => {
     if (!dragState) return;
-    regenerateWithOffsets(offsets);
+
+    // Sync offsets to the polaroid data
+    const updatedPolaroids = [...polaroids];
+    updatedPolaroids[currentIndex] = {
+      ...currentPolaroid,
+      imageOffsets: offsets
+    };
+    setPolaroids(updatedPolaroids);
     setDragState(null);
   };
 
@@ -248,15 +137,15 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
             polaroid.sourceImages,
             polaroid.caption,
             polaroid.date,
-            collageStyle, // Current chosen style
-            { noFrame: false, offsets: polaroid.imageOffsets || offsets }
+            polaroid.collageStyle || CollageStyle.GRID,
+            { noFrame: false, offsets: polaroid.imageOffsets || Array(polaroid.sourceImages.length).fill({ x: 0.5, y: 0.5 }) }
           );
         } else if (polaroid.sourceImages?.[0]) {
           finalImage = await generatePolaroidImage(
             polaroid.sourceImages[0],
             polaroid.caption,
             polaroid.date,
-            { noFrame: false, offset: (polaroid.imageOffsets?.[0] || offsets[0]) }
+            { noFrame: false, offset: (polaroid.imageOffsets?.[0] || { x: 0.5, y: 0.5 }) }
           );
         } else {
           finalImage = polaroid.image;
@@ -286,9 +175,6 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
       const isAndroid = /Android/i.test(navigator.userAgent);
       const canShareFiles = navigator.share && navigator.canShare && navigator.canShare({ files });
 
-      // LOGIC BIFURCATION
-      // On Android, direct download is more reliable for Gallery persistence.
-      // On iOS, navigator.share is the only way to "Save to Photos" directly.
       if (!isAndroid && canShareFiles) {
         console.log("Calling Web Share API (iOS/Desktop)...");
         await navigator.share({
@@ -432,12 +318,12 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
             onTouchMove={handleDragMove}
             onTouchEnd={handleDragEnd}
           >
-            <div className={`transition-all duration-300 transform ${isRegenerating ? 'opacity-50 blur-[2px]' : ''}`}>
+            <div>
               <PolaroidCard
                 data={currentPolaroid}
                 className="w-full"
-                livePreview={dragState !== null}
-                collageStyle={currentPolaroid.collageStyle || CollageStyle.GRID}
+                livePreview={true}
+                collageStyle={collageStyle}
                 interactiveOffsets={offsets}
                 variant="preview"
                 isEditing={isEditing}
@@ -445,15 +331,9 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
               />
             </div>
 
-            {!isRegenerating && !dragState && (
+            {!dragState && (
               <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-black/40 backdrop-blur-md text-white text-[10px] px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                 Drag photo to pan
-              </div>
-            )}
-
-            {isRegenerating && (
-              <div className="absolute inset-0 flex items-center justify-center z-30">
-                <Loader2 className="animate-spin text-cupid-brand" size={32} />
               </div>
             )}
 
