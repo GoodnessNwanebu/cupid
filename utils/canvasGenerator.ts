@@ -198,7 +198,7 @@ export const generatePolaroidImage = async (
         if (grainPattern) {
           ctx.save();
           ctx.globalCompositeOperation = 'overlay';
-          ctx.globalAlpha = 0.12;
+          ctx.globalAlpha = 0.20;
           ctx.fillStyle = grainPattern;
           ctx.fillRect(0, 0, width, height);
           ctx.restore();
