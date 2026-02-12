@@ -8,6 +8,7 @@ interface PolaroidCardProps {
   variant?: 'preview' | 'thumbnail';
   isEditing?: boolean;
   onCaptionChange?: (caption: string) => void;
+  showCaption?: boolean;
 }
 
 export const PolaroidCard: React.FC<PolaroidCardProps> = ({
@@ -16,7 +17,8 @@ export const PolaroidCard: React.FC<PolaroidCardProps> = ({
   onClick,
   variant = 'preview',
   isEditing = false,
-  onCaptionChange
+  onCaptionChange,
+  showCaption = true
 }) => {
   const isPreview = variant === 'preview';
   const inputRef = useRef<HTMLInputElement>(null);
@@ -31,7 +33,7 @@ export const PolaroidCard: React.FC<PolaroidCardProps> = ({
   return (
     <div
       className={`
-        bg-[#FFFDF8] shadow-polaroid transform transition-transform duration-300
+        bg-[#FAF9F6] shadow-polaroid transform transition-transform duration-300
         ${isPreview ? 'p-[6.6%] pb-[26%] rotate-1 hover:rotate-0' : 'p-2 hover:-translate-y-1 cursor-pointer'}
         aspect-[12/17]
         ${className}
@@ -67,7 +69,7 @@ export const PolaroidCard: React.FC<PolaroidCardProps> = ({
       </div>
 
       {/* Caption Area */}
-      {isPreview && (
+      {isPreview && showCaption && (
         <div className="text-center px-2">
           {isEditing ? (
             <input
@@ -85,7 +87,7 @@ export const PolaroidCard: React.FC<PolaroidCardProps> = ({
         </div>
       )}
 
-      {!isPreview && (
+      {!isPreview && showCaption && (
         <div className="text-center pb-1">
           <p className="font-script text-lg text-gray-800 truncate">{data.caption}</p>
         </div>

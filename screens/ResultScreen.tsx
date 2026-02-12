@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { Download, Check, Edit2, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { PolaroidCard } from '../components/PolaroidCard';
-import { PolaroidData } from '../types';
-import { generatePolaroidImage } from '../utils/canvasGenerator';
+import { generatePolaroidImage, generateCollagePolaroid } from '../utils/canvasGenerator';
+import { CollageStyle, PolaroidData } from '../types';
 
 interface ResultScreenProps {
   initialData: PolaroidData[];
@@ -23,18 +23,177 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  const [collageStyle, setCollageStyle] = useState<CollageStyle>(CollageStyle.GRID);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [offsets, setOffsets] = useState<{ x: number, y: number }[]>(
+    initialData[0].imageOffsets || Array(initialData[0].sourceImages?.length || 4).fill({ x: 0.5, y: 0.5 })
+  );
+  const [dragState, setDragState] = useState<{ activeSlot: number, startX: number, startY: number, startOffset: { x: number, y: number } } | null>(null);
 
   const currentPolaroid = polaroids[currentIndex];
+
+  const handleStyleChange = async (newStyle: CollageStyle) => {
+    if (!currentPolaroid.isCollage || !currentPolaroid.sourceImages) return;
+
+    setCollageStyle(newStyle);
+    setIsRegenerating(true);
+    // Reset offsets when style changes as slots shift
+    const resetOffsets = Array(currentPolaroid.sourceImages.length).fill({ x: 0.5, y: 0.5 });
+    setOffsets(resetOffsets);
+
+    try {
+      const newImage = await generateCollagePolaroid(
+        currentPolaroid.sourceImages,
+        currentPolaroid.caption,
+        currentPolaroid.date,
+        newStyle,
+        { noFrame: true, offsets: resetOffsets }
+      );
+
+      const updatedPolaroids = [...polaroids];
+      updatedPolaroids[currentIndex] = {
+        ...currentPolaroid,
+        image: newImage,
+        imageOffsets: resetOffsets
+      };
+      setPolaroids(updatedPolaroids);
+    } catch (err) {
+      console.error("Style regeneration failed:", err);
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
+
+  const regenerateWithOffsets = async (newOffsets: { x: number, y: number }[]) => {
+    setIsRegenerating(true);
+
+    try {
+      let newImage: string;
+
+      if (currentPolaroid.isCollage && currentPolaroid.sourceImages) {
+        newImage = await generateCollagePolaroid(
+          currentPolaroid.sourceImages,
+          currentPolaroid.caption,
+          currentPolaroid.date,
+          collageStyle,
+          { noFrame: true, offsets: newOffsets }
+        );
+      } else if (currentPolaroid.sourceImages?.[0]) {
+        newImage = await generatePolaroidImage(
+          currentPolaroid.sourceImages[0],
+          currentPolaroid.caption,
+          currentPolaroid.date,
+          { noFrame: true, offset: newOffsets[0] }
+        );
+      } else {
+        return;
+      }
+
+      const updatedPolaroids = [...polaroids];
+      updatedPolaroids[currentIndex] = {
+        ...currentPolaroid,
+        image: newImage,
+        imageOffsets: newOffsets
+      };
+      setPolaroids(updatedPolaroids);
+    } catch (err) {
+      console.error("Offset regeneration failed:", err);
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
+
+  const getSlotIndex = (e: React.MouseEvent | React.TouchEvent, rect: DOMRect) => {
+    if (!currentPolaroid.isCollage) return 0;
+
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    const relX = (clientX - rect.left) / rect.width;
+    const relY = (clientY - rect.top) / rect.height;
+
+    const count = currentPolaroid.sourceImages?.length || 0;
+
+    if (collageStyle === CollageStyle.GRID) {
+      if (count === 2) return relY < 0.5 ? 0 : 1;
+      if (count === 3) {
+        if (relY < 0.55) return 0;
+        return relX < 0.5 ? 1 : 2;
+      }
+      if (count === 4) {
+        if (relY < 0.5) return relX < 0.5 ? 0 : 1;
+        return relX < 0.5 ? 2 : 3;
+      }
+    } else { // Scrapbook - using simple quadrant mapping for interaction
+      if (count === 2) {
+        return (relX + relY < 1) ? 0 : 1;
+      }
+      if (count === 3) {
+        if (relY < 0.45) return 0;
+        return relX < 0.5 ? 1 : 2;
+      }
+      if (relY < 0.5) return relX < 0.5 ? 0 : 1;
+      return relX < 0.5 ? 2 : 3;
+    }
+    return 0;
+  };
+
+  const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
+    if (isRegenerating) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const slotIdx = getSlotIndex(e, rect);
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+
+    setDragState({
+      activeSlot: slotIdx,
+      startX: clientX,
+      startY: clientY,
+      startOffset: { ...offsets[slotIdx] }
+    });
+  };
+
+  const handleDragMove = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!dragState) return;
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+
+    const dx = (clientX - dragState.startX) / 300; // Sensitivity
+    const dy = (clientY - dragState.startY) / 400;
+
+    const newOffsets = [...offsets];
+    newOffsets[dragState.activeSlot] = {
+      x: Math.max(0, Math.min(1, dragState.startOffset.x - dx)),
+      y: Math.max(0, Math.min(1, dragState.startOffset.y - dy))
+    };
+    setOffsets(newOffsets);
+  };
+
+  const handleDragEnd = () => {
+    if (!dragState) return;
+    regenerateWithOffsets(offsets);
+    setDragState(null);
+  };
 
   const handleSave = async () => {
     setIsSaving(true);
     console.log("Starting batch save/share process...");
 
     try {
-      // Sequential generation to maintain low memory and high stability
       const results = [];
       for (const polaroid of polaroids) {
-        const dataUrl = await generatePolaroidImage(polaroid.image, polaroid.caption, polaroid.date);
+        // Here, polaroid.image IS THE COMPOSITE (no frame).
+        // Calling generatePolaroidImage with it will wrap it in a high-res frame + text.
+        const dataUrl = await generatePolaroidImage(
+          polaroid.image,
+          polaroid.caption,
+          polaroid.date,
+          {
+            noFrame: false,
+            // Composite image is already panned, so we use default offset 0.5 here 
+            // since we are wrapping the already-cropped composite.
+            offset: { x: 0.5, y: 0.5 }
+          }
+        );
         const filename = `cupid-${polaroid.caption.toLowerCase().replace(/\s+/g, '-')}-${polaroid.id.slice(-4)}.jpg`;
 
         const res = await fetch(dataUrl);
@@ -141,6 +300,30 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
           <p className="text-gray-500 text-sm">Your romantic memories are ready.</p>
         </div>
 
+        {/* Style Picker (only for Collage) */}
+        {currentPolaroid.isCollage && (
+          <div className="flex bg-white/50 backdrop-blur-sm p-1 rounded-full border border-gray-200 mb-6 w-fit mx-auto">
+            <button
+              onClick={() => handleStyleChange(CollageStyle.GRID)}
+              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${collageStyle === CollageStyle.GRID
+                ? 'bg-white shadow-sm text-cupid-brand'
+                : 'text-gray-500 hover:text-gray-700'
+                }`}
+            >
+              Classic Grid
+            </button>
+            <button
+              onClick={() => handleStyleChange(CollageStyle.SCRAPBOOK)}
+              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${collageStyle === CollageStyle.SCRAPBOOK
+                ? 'bg-white shadow-sm text-cupid-brand'
+                : 'text-gray-500 hover:text-gray-700'
+                }`}
+            >
+              Scrapbook
+            </button>
+          </div>
+        )}
+
         {/* Carousel Area */}
         <div className="w-full relative flex items-center justify-center mb-8">
 
@@ -157,16 +340,37 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
           </button>
 
           {/* Polaroid Preview */}
-          <div className="w-full max-w-[300px] relative group px-2">
-            <div className="transition-all duration-300 transform">
+          <div
+            className="w-full max-w-[300px] relative group px-2 cursor-move"
+            onMouseDown={handleDragStart}
+            onMouseMove={handleDragMove}
+            onMouseUp={handleDragEnd}
+            onMouseLeave={handleDragEnd}
+            onTouchStart={handleDragStart}
+            onTouchMove={handleDragMove}
+            onTouchEnd={handleDragEnd}
+          >
+            <div className={`transition-all duration-300 transform ${isRegenerating ? 'opacity-50 blur-[2px]' : ''}`}>
               <PolaroidCard
                 data={currentPolaroid}
-                className="w-full"
+                className="w-full pointer-events-none" // Disable nested events
                 variant="preview"
                 isEditing={isEditing}
                 onCaptionChange={handleCaptionChange}
               />
             </div>
+
+            {!isRegenerating && !dragState && (
+              <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-black/40 backdrop-blur-md text-white text-[10px] px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                Drag photo to pan
+              </div>
+            )}
+
+            {isRegenerating && (
+              <div className="absolute inset-0 flex items-center justify-center z-30">
+                <Loader2 className="animate-spin text-cupid-brand" size={32} />
+              </div>
+            )}
 
             {/* Floating Edit Button */}
             <div className="absolute bottom-20 right-6 z-20">

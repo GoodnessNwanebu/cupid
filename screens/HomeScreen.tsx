@@ -3,10 +3,10 @@ import { Upload, X, Plus, Image as ImageIcon, Check } from 'lucide-react';
 import { HeartDashed } from '../components/ui/Icons';
 import { Button } from '../components/ui/Button';
 import { PolaroidCard } from '../components/PolaroidCard';
-import { PolaroidData, UploadedFile } from '../types';
+import { GenerationMode, PolaroidData, UploadedFile } from '../types';
 
 interface HomeScreenProps {
-  onImagesSelected: (files: UploadedFile[]) => void;
+  onImagesSelected: (files: UploadedFile[], mode: GenerationMode) => void;
   recentMemories: PolaroidData[];
 }
 
@@ -52,6 +52,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onImagesSelected, recent
   const [dragActive, setDragActive] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<UploadedFile[]>([]);
   const [showLimitToast, setShowLimitToast] = useState(false);
+  const [mode, setMode] = useState<GenerationMode>(GenerationMode.INDIVIDUAL);
+
+  const getLimit = () => (mode === GenerationMode.COLLAGE ? 4 : 10);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -60,8 +63,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onImagesSelected, recent
   };
 
   const processFiles = (files: File[]) => {
+    const limit = getLimit();
     const currentCount = selectedFiles.length;
-    const remainingSlot = 10 - currentCount;
+    const remainingSlot = limit - currentCount;
 
     if (remainingSlot <= 0) {
       setShowLimitToast(true);
@@ -115,10 +119,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onImagesSelected, recent
 
   const handleGenerateClick = () => {
     if (selectedFiles.length > 0) {
-      onImagesSelected(selectedFiles);
+      onImagesSelected(selectedFiles, mode);
     } else {
       fileInputRef.current?.click();
     }
+  };
+
+  const toggleMode = (newMode: GenerationMode) => {
+    if (newMode === mode) return;
+
+    // If switching to collage and already have > 4, trim
+    if (newMode === GenerationMode.COLLAGE && selectedFiles.length > 4) {
+      setSelectedFiles(prev => prev.slice(0, 4));
+    }
+    setMode(newMode);
   };
 
   return (
@@ -133,6 +147,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onImagesSelected, recent
         <div className="mb-6 text-center sm:text-left">
           <h2 className="font-serif text-3xl font-bold text-gray-900 mb-2">Capture the spark</h2>
           <p className="text-gray-500 text-sm">Transform your moments into vintage magic.</p>
+        </div>
+
+        {/* Mode Selector */}
+        <div className="flex bg-white/50 p-1 rounded-2xl mb-8 border border-gray-100 shadow-inner">
+          <button
+            onClick={() => toggleMode(GenerationMode.INDIVIDUAL)}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all ${mode === GenerationMode.INDIVIDUAL ? 'bg-white shadow-sm text-gray-900 border border-gray-100' : 'text-gray-400 hover:text-gray-600'}`}
+          >
+            <ImageIcon size={16} />
+            Individual
+          </button>
+          <button
+            onClick={() => toggleMode(GenerationMode.COLLAGE)}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all ${mode === GenerationMode.COLLAGE ? 'bg-white shadow-sm text-gray-900 border border-gray-100' : 'text-gray-400 hover:text-gray-600'}`}
+          >
+            <Upload size={16} />
+            Collage
+          </button>
         </div>
 
         {/* Upload Zone */}
@@ -170,18 +202,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onImagesSelected, recent
                   <Upload className="w-7 h-7" />
                 </div>
                 <h3 className="font-serif text-xl font-bold text-gray-800 mb-1">Tap to Upload</h3>
-                <p className="text-xs text-gray-400">Select up to 10 pictures</p>
+                <p className="text-xs text-gray-400">Select up to {getLimit()} pictures</p>
               </div>
             </div>
           ) : (
             // Grid State
-            <div className="grid grid-cols-2 gap-3 animate-in fade-in zoom-in duration-300">
+            <div className={`grid ${mode === GenerationMode.COLLAGE ? 'grid-cols-2' : 'grid-cols-2'} gap-3 animate-in fade-in zoom-in duration-300`}>
               {selectedFiles.map((file) => (
                 <GridItem key={file.id} file={file} onRemove={removeFile} />
               ))}
 
               {/* Add More Button */}
-              {selectedFiles.length < 10 && (
+              {selectedFiles.length < getLimit() && (
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   className="aspect-[12/17] rounded-xl border-2 border-dashed border-cupid-200 flex flex-col items-center justify-center text-cupid-400 hover:bg-cupid-50 hover:border-cupid-300 transition-all gap-2"
@@ -205,20 +237,27 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onImagesSelected, recent
           <div className="w-5 h-5 bg-cupid-brand rounded-full flex items-center justify-center">
             <Check size={12} className="text-white stroke-[3px]" />
           </div>
-          <span className="text-sm font-medium">Maximum 10 photos, taking the first ones!</span>
+          <span className="text-sm font-medium">Maximum {getLimit()} photos for {mode.toLowerCase()}, taking the first ones!</span>
         </div>
       )}
 
       {/* Sticky Footer */}
       <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#F5F5F7] via-[#F5F5F7] to-transparent z-20">
-        <div className="max-w-md mx-auto">
+        <div className="max-w-md mx-auto relative">
+          {mode === GenerationMode.COLLAGE && selectedFiles.length === 1 && (
+            <div className="absolute -top-8 left-0 right-0 text-center animate-bounce">
+              <p className="text-cupid-brand font-medium text-xs">Select 1 more photo for collage! ✨</p>
+            </div>
+          )}
           <Button
             fullWidth
             onClick={handleGenerateClick}
-            disabled={selectedFiles.length === 0}
+            disabled={selectedFiles.length === 0 || (mode === GenerationMode.COLLAGE && selectedFiles.length < 2)}
           >
             {selectedFiles.length > 0
-              ? `Generate ${selectedFiles.length} Polaroid${selectedFiles.length > 1 ? 's' : ''}`
+              ? mode === GenerationMode.COLLAGE
+                ? `Generate ${selectedFiles.length}-Photo Collage`
+                : `Generate ${selectedFiles.length} Polaroid${selectedFiles.length > 1 ? 's' : ''}`
               : 'Generate Polaroids'}
           </Button>
         </div>

@@ -8,16 +8,29 @@ export enum AppScreen {
 
 export interface PolaroidData {
   id: string;
-  image: string; // Base64 or URL
+  image: string; // Base64 or URL (the composite photo area)
   caption: string;
   date: string;
   generatedAt: number;
+  isCollage?: boolean;
+  sourceImages?: string[]; // Original images for collages
+  imageOffsets?: { x: number, y: number }[]; // Custom focal points (0.0 to 1.0)
 }
 
 export interface UploadedFile {
   id: string;
   file: File;
   previewUrl: string;
+}
+
+export enum GenerationMode {
+  INDIVIDUAL = 'INDIVIDUAL',
+  COLLAGE = 'COLLAGE',
+}
+
+export enum CollageStyle {
+  GRID = 'GRID',
+  SCRAPBOOK = 'SCRAPBOOK',
 }
 
 // Icons types

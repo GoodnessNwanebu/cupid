@@ -3,7 +3,8 @@ import { HomeScreen } from './screens/HomeScreen';
 import { ProcessingScreen } from './screens/ProcessingScreen';
 import { ResultScreen } from './screens/ResultScreen';
 import { EndScreen } from './screens/EndScreen';
-import { AppScreen, PolaroidData, UploadedFile } from './types';
+import { generatePolaroidImage, generateCollagePolaroid } from './utils/canvasGenerator';
+import { AppScreen, CollageStyle, GenerationMode, PolaroidData, UploadedFile } from './types';
 
 const INITIAL_MEMORIES: PolaroidData[] = [
   {
@@ -25,33 +26,65 @@ const INITIAL_MEMORIES: PolaroidData[] = [
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<AppScreen>(AppScreen.HOME);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [generationMode, setGenerationMode] = useState<GenerationMode>(GenerationMode.INDIVIDUAL);
   const [generatedPolaroids, setGeneratedPolaroids] = useState<PolaroidData[]>([]);
   const [recentMemories, setRecentMemories] = useState<PolaroidData[]>(INITIAL_MEMORIES);
 
-  const handleImagesSelected = async (files: UploadedFile[]) => {
+  const handleImagesSelected = async (files: UploadedFile[], mode: GenerationMode) => {
     setUploadedFiles(files);
+    setGenerationMode(mode);
     setCurrentScreen(AppScreen.PROCESSING);
   };
 
   const handleProcessingComplete = async () => {
     if (uploadedFiles.length === 0) return;
 
-    // Generate formatted date for the caption
     const date = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    let newPolaroids: PolaroidData[] = [];
 
-    // Create polaroids with default text (Client side only)
-    const newPolaroids = uploadedFiles.map((file, index) => {
-      return {
-        id: Date.now().toString() + index,
-        image: file.previewUrl,
-        caption: "Captured Forever", // Static default caption since we removed AI
-        date: date,
-        generatedAt: Date.now()
-      } as PolaroidData;
-    });
+    try {
+      if (generationMode === GenerationMode.COLLAGE) {
+        const imageUris = uploadedFiles.map(f => f.previewUrl);
+        const initialOffsets = imageUris.map(() => ({ x: 0.5, y: 0.5 }));
+        const collageImage = await generateCollagePolaroid(
+          imageUris,
+          "Our Moments", // Default caption for collage
+          date,
+          CollageStyle.GRID,
+          { noFrame: true, offsets: initialOffsets }
+        );
+        newPolaroids = [{
+          id: Date.now().toString(),
+          image: collageImage,
+          caption: "Our Moments",
+          date: date,
+          generatedAt: Date.now(),
+          isCollage: true,
+          sourceImages: imageUris,
+          imageOffsets: initialOffsets
+        }];
+      } else {
+        const generatedImages = await Promise.all(
+          uploadedFiles.map(file => generatePolaroidImage(file.previewUrl, "Captured Forever", date, { noFrame: true }))
+        );
 
-    setGeneratedPolaroids(newPolaroids);
-    setCurrentScreen(AppScreen.RESULT);
+        newPolaroids = uploadedFiles.map((file, index) => ({
+          id: Date.now().toString() + index,
+          image: generatedImages[index],
+          caption: "Captured Forever",
+          date: date,
+          generatedAt: Date.now(),
+          sourceImages: [file.previewUrl],
+          imageOffsets: [{ x: 0.5, y: 0.5 }]
+        }));
+      }
+
+      setGeneratedPolaroids(newPolaroids);
+      setCurrentScreen(AppScreen.RESULT);
+    } catch (err) {
+      console.error("Generation failed:", err);
+      // Fallback or error state
+    }
   };
 
   const handleSaveAll = (memories: PolaroidData[]) => {
