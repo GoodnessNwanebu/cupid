@@ -15,6 +15,7 @@ interface PolaroidCardProps {
 }
 
 import { CollageStyle } from '../types';
+import { COLLAGE_CONFIGS } from '../utils/layoutConstants';
 
 export const PolaroidCard: React.FC<PolaroidCardProps> = ({
   data,
@@ -38,6 +39,13 @@ export const PolaroidCard: React.FC<PolaroidCardProps> = ({
     }
   }, [isEditing]);
 
+  // Collages are "loaded" immediately for showing overlays
+  useEffect(() => {
+    if (livePreview) {
+      setIsLoaded(true);
+    }
+  }, [livePreview]);
+
   return (
     <div
       className={`
@@ -53,7 +61,13 @@ export const PolaroidCard: React.FC<PolaroidCardProps> = ({
         {livePreview && data.sourceImages && data.sourceImages.length > 0 ? (
           <div className="w-full h-full relative">
             {collageStyle === CollageStyle.GRID ? (
-              <div className="w-full h-full flex flex-col gap-[3%] p-[2%] box-border">
+              <div
+                className="w-full h-full flex flex-col box-border"
+                style={{
+                  gap: `${COLLAGE_CONFIGS.GRID.GUTTER * 100}%`,
+                  padding: `${COLLAGE_CONFIGS.GRID.MARGIN * 100}%`
+                }}
+              >
                 {data.sourceImages.length === 1 && (
                   <img
                     src={data.sourceImages[0]}
@@ -66,17 +80,20 @@ export const PolaroidCard: React.FC<PolaroidCardProps> = ({
                     <div className="flex-1 overflow-hidden relative">
                       <img src={data.sourceImages[0]} className="w-full h-full object-cover" style={{ objectPosition: `${(interactiveOffsets?.[0]?.x ?? 0.5) * 100}% ${(interactiveOffsets?.[0]?.y ?? 0.5) * 100}%` }} />
                     </div>
-                    <div className="flex-1 overflow-hidden relative">
+                    <div className="flex-1 overflow-hidden relative" style={{ marginTop: `${COLLAGE_CONFIGS.GRID.GUTTER * 100}%` }}>
                       <img src={data.sourceImages[1]} className="w-full h-full object-cover" style={{ objectPosition: `${(interactiveOffsets?.[1]?.x ?? 0.5) * 100}% ${(interactiveOffsets?.[1]?.y ?? 0.5) * 100}%` }} />
                     </div>
                   </>
                 )}
                 {data.sourceImages.length === 3 && (
                   <>
-                    <div className="flex-[1.1] overflow-hidden relative">
+                    <div className="flex-[1.2] overflow-hidden relative">
                       <img src={data.sourceImages[0]} className="w-full h-full object-cover" style={{ objectPosition: `${(interactiveOffsets?.[0]?.x ?? 0.5) * 100}% ${(interactiveOffsets?.[0]?.y ?? 0.5) * 100}%` }} />
                     </div>
-                    <div className="flex-1 flex gap-[3%]">
+                    <div
+                      className="flex-1 flex"
+                      style={{ gap: `${COLLAGE_CONFIGS.GRID.GUTTER * 100}%`, marginTop: `${COLLAGE_CONFIGS.GRID.GUTTER * 100}%` }}
+                    >
                       <div className="flex-1 overflow-hidden relative">
                         <img src={data.sourceImages[1]} className="w-full h-full object-cover" style={{ objectPosition: `${(interactiveOffsets?.[1]?.x ?? 0.5) * 100}% ${(interactiveOffsets?.[1]?.y ?? 0.5) * 100}%` }} />
                       </div>
@@ -88,7 +105,10 @@ export const PolaroidCard: React.FC<PolaroidCardProps> = ({
                 )}
                 {data.sourceImages.length >= 4 && (
                   <>
-                    <div className="flex-1 flex gap-[3%]">
+                    <div
+                      className="flex-1 flex"
+                      style={{ gap: `${COLLAGE_CONFIGS.GRID.GUTTER * 100}%` }}
+                    >
                       <div className="flex-1 overflow-hidden relative">
                         <img src={data.sourceImages[0]} className="w-full h-full object-cover" style={{ objectPosition: `${(interactiveOffsets?.[0]?.x ?? 0.5) * 100}% ${(interactiveOffsets?.[0]?.y ?? 0.5) * 100}%` }} />
                       </div>
@@ -96,7 +116,10 @@ export const PolaroidCard: React.FC<PolaroidCardProps> = ({
                         <img src={data.sourceImages[1]} className="w-full h-full object-cover" style={{ objectPosition: `${(interactiveOffsets?.[1]?.x ?? 0.5) * 100}% ${(interactiveOffsets?.[1]?.y ?? 0.5) * 100}%` }} />
                       </div>
                     </div>
-                    <div className="flex-1 flex gap-[3%]">
+                    <div
+                      className="flex-1 flex"
+                      style={{ gap: `${COLLAGE_CONFIGS.GRID.GUTTER * 100}%`, marginTop: `${COLLAGE_CONFIGS.GRID.GUTTER * 100}%` }}
+                    >
                       <div className="flex-1 overflow-hidden relative">
                         <img src={data.sourceImages[2]} className="w-full h-full object-cover" style={{ objectPosition: `${(interactiveOffsets?.[2]?.x ?? 0.5) * 100}% ${(interactiveOffsets?.[2]?.y ?? 0.5) * 100}%` }} />
                       </div>
@@ -111,42 +134,42 @@ export const PolaroidCard: React.FC<PolaroidCardProps> = ({
               /* Scrapbook Layout */
               <div className="w-full h-full relative">
                 {/* Doodles (Static representative version for UI) */}
-                <div className="absolute inset-0 opacity-20 pointer-events-none">
-                  <div className="absolute top-[20%] left-[20%] text-[40px] text-gray-400 rotate-12">❤️</div>
-                  <div className="absolute bottom-[30%] right-[10%] text-[30px] text-gray-400 -rotate-12">✨</div>
-                  <div className="absolute top-[50%] right-[30%] text-[20px] text-gray-400 rotate-45">✨</div>
+                {/* Doodles (Static representative version for UI) */}
+                <div className="absolute inset-0 opacity-15 pointer-events-none">
+                  <div className="absolute top-[15%] left-[15%] text-[48px] text-gray-400 rotate-12 select-none">❤️</div>
+                  <div className="absolute bottom-[25%] right-[8%] text-[36px] text-gray-400 -rotate-12 select-none">✨</div>
+                  <div className="absolute top-[45%] right-[25%] text-[24px] text-gray-400 rotate-45 select-none">💫</div>
+                  <div className="absolute top-[10%] right-[10%] text-[28px] text-gray-400 -rotate-6 select-none">✨</div>
+                  <div className="absolute bottom-[15%] left-[20%] text-[32px] text-gray-400 rotate-12 select-none">🎀</div>
                 </div>
 
-                {data.sourceImages.map((src, i) => {
-                  const configs = [
-                    { w: '60%', h: '45%', t: '10%', l: '10%', r: '-5deg' },
-                    { w: '60%', h: '45%', b: '15%', r: '10%', r_deg: '6deg' },
-                    { w: '55%', h: '40%', t: '40%', l: '15%', r: '-3deg' },
-                    { w: '55%', h: '40%', b: '10%', l: '35%', r: '4deg' },
-                  ];
-                  const c = configs[i % configs.length];
-                  return (
+                {(() => {
+                  const count = data.sourceImages.length as 2 | 3 | 4;
+                  const layout = COLLAGE_CONFIGS.SCRAPBOOK.layouts[count] || COLLAGE_CONFIGS.SCRAPBOOK.layouts[2];
+                  return layout.map((c, i) => (
                     <div
                       key={i}
-                      className="absolute bg-white p-1 pb-4 shadow-md overflow-hidden"
+                      className="absolute bg-white shadow-md overflow-hidden"
                       style={{
-                        width: c.w,
-                        height: c.h,
-                        top: c.t,
-                        left: c.l,
-                        bottom: c.b,
-                        right: c.r,
-                        transform: `rotate(${c.r_deg || c.r})`
+                        width: `${c.w * 100}%`,
+                        height: `${c.h * 100}%`,
+                        top: `${c.y * 100}%`,
+                        left: `${c.x * 100}%`,
+                        transform: `rotate(${c.rotation}deg)`,
+                        padding: `8% 8% 25% 8%`, // Professional mini-polaroid framing
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.12)'
                       }}
                     >
-                      <img
-                        src={src}
-                        className="w-full h-[80%] object-cover"
-                        style={{ objectPosition: `${(interactiveOffsets?.[i]?.x ?? 0.5) * 100}% ${(interactiveOffsets?.[i]?.y ?? 0.5) * 100}%` }}
-                      />
+                      <div className="w-full h-full bg-gray-50 overflow-hidden relative">
+                        <img
+                          src={data.sourceImages![i]}
+                          className="w-full h-full object-cover"
+                          style={{ objectPosition: `${(interactiveOffsets?.[i]?.x ?? 0.5) * 100}% ${(interactiveOffsets?.[i]?.y ?? 0.5) * 100}%` }}
+                        />
+                      </div>
                     </div>
-                  );
-                })}
+                  ));
+                })()}
               </div>
             )}
           </div>

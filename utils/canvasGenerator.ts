@@ -1,5 +1,6 @@
 import smartcrop from 'smartcrop';
 import { CollageStyle } from '../types';
+import { COLLAGE_CONFIGS } from './layoutConstants';
 
 /**
  * Helper to perform stepped downscaling.
@@ -347,66 +348,50 @@ export const generateCollagePolaroid = async (
         const slots: { x: number, y: number, w: number, h: number, rotation?: number }[] = [];
         const count = loadedImgs.length;
 
+        const areaWidth = collageWidth - (2 * COLLAGE_CONFIGS.GRID.MARGIN * collageWidth);
+        const areaHeight = collageHeight - (2 * COLLAGE_CONFIGS.GRID.MARGIN * collageHeight);
+        const gutterSize = COLLAGE_CONFIGS.GRID.GUTTER * collageWidth;
+        const gridX = margin + (COLLAGE_CONFIGS.GRID.MARGIN * collageWidth);
+        const gridY = collageY + (COLLAGE_CONFIGS.GRID.MARGIN * collageHeight);
+
         if (style === CollageStyle.GRID) {
-          const gutter = 24;
           if (count === 2) {
-            // Top / Bottom Horizontal Split
-            const sw = collageWidth;
-            const sh = (collageHeight - gutter) / 2;
+            const h = (areaHeight - gutterSize) / 2;
             slots.push(
-              { x: margin, y: collageY, w: sw, h: sh },
-              { x: margin, y: collageY + sh + gutter, w: sw, h: sh }
+              { x: gridX, y: gridY, w: areaWidth, h: h },
+              { x: gridX, y: gridY + h + gutterSize, w: areaWidth, h: h }
             );
           } else if (count === 3) {
-            // Center Stage: Top Landscape, Bottom Two Squares
-            const th = (collageHeight - gutter) * 0.55;
-            const bh = collageHeight - th - gutter;
-            const bw = (collageWidth - gutter) / 2;
+            const hTop = areaHeight * 0.55;
+            const hBottom = areaHeight - hTop - gutterSize;
+            const wBottom = (areaWidth - gutterSize) / 2;
             slots.push(
-              { x: margin, y: collageY, w: collageWidth, h: th },
-              { x: margin, y: collageY + th + gutter, w: bw, h: bh },
-              { x: margin + bw + gutter, y: collageY + th + gutter, w: bw, h: bh }
+              { x: gridX, y: gridY, w: areaWidth, h: hTop },
+              { x: gridX, y: gridY + hTop + gutterSize, w: wBottom, h: hBottom },
+              { x: gridX + wBottom + gutterSize, y: gridY + hTop + gutterSize, w: wBottom, h: hBottom }
             );
-          } else { // 4 or more
-            const sw = (collageWidth - gutter) / 2;
-            const sh = (collageHeight - gutter) / 2;
+          } else {
+            const w = (areaWidth - gutterSize) / 2;
+            const h = (areaHeight - gutterSize) / 2;
             slots.push(
-              { x: margin, y: collageY, w: sw, h: sh },
-              { x: margin + sw + gutter, y: collageY, w: sw, h: sh },
-              { x: margin, y: collageY + sh + gutter, w: sw, h: sh },
-              { x: margin + sw + gutter, y: collageY + sh + gutter, w: sw, h: sh }
+              { x: gridX, y: gridY, w: w, h: h },
+              { x: gridX + w + gutterSize, y: gridY, w: w, h: h },
+              { x: gridX, y: gridY + h + gutterSize, w: w, h: h },
+              { x: gridX + w + gutterSize, y: gridY + h + gutterSize, w: w, h: h }
             );
           }
         } else { // SCRAPBOOK
-          if (count === 2) {
-            // Diagonal Overlapping
-            const sw = collageWidth * 0.65;
-            const sh = collageHeight * 0.5;
-            slots.push(
-              { x: margin + 50, y: collageY + 50, w: sw, h: sh, rotation: -4 },
-              { x: margin + collageWidth - sw - 50, y: collageY + collageHeight - sh - 50, w: sw, h: sh, rotation: 6 }
-            );
-          } else if (count === 3) {
-            // Cluster Arrangement
-            const sw = collageWidth * 0.55;
-            const sh = collageHeight * 0.45;
-            slots.push(
-              { x: margin + (collageWidth - sw) / 2, y: collageY + 40, w: sw, h: sh, rotation: -3 },
-              { x: margin + 40, y: collageY + collageHeight - sh - 60, w: sw, h: sh, rotation: 4 },
-              { x: margin + collageWidth - sw - 40, y: collageY + collageHeight - sh - 100, w: sw, h: sh, rotation: 2 }
-            );
-          } else {
-            // 4+ images (Original redesign)
-            const tilts = [-5, 4, -3, 6];
-            const sw = collageWidth * 0.45;
-            const sh = collageHeight * 0.4;
-            slots.push(
-              { x: margin + 100, y: collageY + 120, w: sw, h: sh, rotation: tilts[0] },
-              { x: margin + collageWidth - sw - 100, y: collageY + 80, w: sw, h: sh, rotation: tilts[1] },
-              { x: margin + 80, y: collageY + collageHeight - sh - 150, w: sw, h: sh, rotation: tilts[2] },
-              { x: margin + collageWidth - sw - 120, y: collageY + collageHeight - sh - 80, w: sw, h: sh, rotation: tilts[3] }
-            );
-          }
+          const layout = COLLAGE_CONFIGS.SCRAPBOOK.layouts[count as keyof typeof COLLAGE_CONFIGS.SCRAPBOOK.layouts] || COLLAGE_CONFIGS.SCRAPBOOK.layouts[2];
+
+          layout.forEach(slot => {
+            slots.push({
+              x: margin + (slot.x * collageWidth),
+              y: collageY + (slot.y * collageHeight),
+              w: slot.w * collageWidth,
+              h: slot.h * collageHeight,
+              rotation: slot.rotation
+            });
+          });
 
           if (!noFrame) {
             drawSimpleDoodles(ctx, margin, collageY, collageWidth, collageHeight);
