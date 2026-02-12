@@ -57,7 +57,7 @@ const createGrainPattern = (ctx: CanvasRenderingContext2D) => {
   const imgData = nCtx.createImageData(w, h);
   const data = imgData.data;
   for (let i = 0; i < data.length; i += 4) {
-    const val = 100 + Math.random() * 55;
+    const val = 80 + Math.random() * 100;
     data[i] = val;
     data[i + 1] = val;
     data[i + 2] = val;
@@ -198,7 +198,7 @@ export const generatePolaroidImage = async (
         if (grainPattern) {
           ctx.save();
           ctx.globalCompositeOperation = 'overlay';
-          ctx.globalAlpha = 0.06;
+          ctx.globalAlpha = 0.12;
           ctx.fillStyle = grainPattern;
           ctx.fillRect(0, 0, width, height);
           ctx.restore();
