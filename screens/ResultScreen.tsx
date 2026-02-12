@@ -49,23 +49,28 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
       const dataUrls = results.map(r => r.dataUrl);
 
       // PERSIST HIGH-RES IMAGES:
-      // Update the polaroids with the high-res dataUrls so they carry over to EndScreen
       const finalPolaroids = polaroids.map((p, i) => ({
         ...p,
         image: results[i].dataUrl
       }));
       setPolaroids(finalPolaroids);
 
-      // Check if Web Share API supports file sharing
-      if (navigator.share && navigator.canShare && navigator.canShare({ files })) {
-        console.log("Calling Web Share API...");
+      // PLATFORM DETECTION
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      const canShareFiles = navigator.share && navigator.canShare && navigator.canShare({ files });
+
+      // LOGIC BIFURCATION
+      // On Android, direct download is more reliable for Gallery persistence.
+      // On iOS, navigator.share is the only way to "Save to Photos" directly.
+      if (!isAndroid && canShareFiles) {
+        console.log("Calling Web Share API (iOS/Desktop)...");
         await navigator.share({
           files: files,
           title: 'My Cupid Memories',
           text: 'Check out our Valentine polaroids! ❤️'
         });
       } else {
-        console.log("Falling back to sequential download...");
+        console.log(isAndroid ? "Android detected: Forcing direct download..." : "Share not supported: Falling back to download...");
         for (let i = 0; i < dataUrls.length; i++) {
           const link = document.createElement('a');
           link.download = results[i].file.name;
