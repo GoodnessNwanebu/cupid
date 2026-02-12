@@ -12,9 +12,9 @@ interface ResultScreenProps {
   onSave: (data: PolaroidData[]) => void;
 }
 
-export const ResultScreen: React.FC<ResultScreenProps> = ({ 
-  initialData, 
-  onBack, 
+export const ResultScreen: React.FC<ResultScreenProps> = ({
+  initialData,
+  onBack,
   onRegenerate,
   onSave
 }) => {
@@ -28,32 +28,65 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
 
   const handleSave = async () => {
     setIsSaving(true);
-    
+    console.log("Starting batch save/share process...");
+
     try {
-      // Process downloads one by one
-      for (const polaroid of polaroids) {
+      // Parallelize generation to stay within the "User Activation" window
+      const results = await Promise.all(polaroids.map(async (polaroid) => {
         const dataUrl = await generatePolaroidImage(polaroid.image, polaroid.caption, polaroid.date);
-        
-        // Create temporary link to trigger download
-        const link = document.createElement('a');
-        // Changed extension to .jpg
         const filename = `cupid-${polaroid.caption.toLowerCase().replace(/\s+/g, '-')}-${polaroid.id.slice(-4)}.jpg`;
-        link.download = filename;
-        link.href = dataUrl;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        // Small delay to ensure browser handles multiple downloads gracefully
-        await new Promise(resolve => setTimeout(resolve, 500));
+
+        const res = await fetch(dataUrl);
+        const blob = await res.blob();
+        return {
+          dataUrl,
+          file: new File([blob], filename, { type: 'image/jpeg' })
+        };
+      }));
+
+      const files = results.map(r => r.file);
+      const dataUrls = results.map(r => r.dataUrl);
+
+      // PERSIST HIGH-RES IMAGES:
+      // Update the polaroids with the high-res dataUrls so they carry over to EndScreen
+      const finalPolaroids = polaroids.map((p, i) => ({
+        ...p,
+        image: results[i].dataUrl
+      }));
+      setPolaroids(finalPolaroids);
+
+      // Check if Web Share API supports file sharing
+      if (navigator.share && navigator.canShare && navigator.canShare({ files })) {
+        console.log("Calling Web Share API...");
+        await navigator.share({
+          files: files,
+          title: 'My Cupid Memories',
+          text: 'Check out our Valentine polaroids! ❤️'
+        });
+      } else {
+        console.log("Falling back to sequential download...");
+        for (let i = 0; i < dataUrls.length; i++) {
+          const link = document.createElement('a');
+          link.download = results[i].file.name;
+          link.href = dataUrls[i];
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+
+          if (i < dataUrls.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+        }
       }
 
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3000);
-      onSave(polaroids);
+      onSave(finalPolaroids);
     } catch (error) {
-      console.error("Error generating polaroids:", error);
-      alert("Failed to save some images. Please try again.");
+      console.error("Error in batch save/share:", error);
+      if (error instanceof Error && error.name !== 'AbortError') {
+        alert("Failed to save images. Please try again.");
+      }
     } finally {
       setIsSaving(false);
     }
@@ -104,9 +137,9 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
 
         {/* Carousel Area */}
         <div className="w-full relative flex items-center justify-center mb-8">
-          
+
           {/* Prev Button */}
-          <button 
+          <button
             onClick={prevSlide}
             disabled={currentIndex === 0}
             className={`
@@ -120,34 +153,34 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
           {/* Polaroid Preview */}
           <div className="w-full max-w-[300px] relative group px-2">
             <div className="transition-all duration-300 transform">
-              <PolaroidCard 
-                data={currentPolaroid} 
+              <PolaroidCard
+                data={currentPolaroid}
                 className="w-full"
                 variant="preview"
                 isEditing={isEditing}
                 onCaptionChange={handleCaptionChange}
               />
             </div>
-            
+
             {/* Floating Edit Button */}
             <div className="absolute bottom-20 right-6 z-20">
-               <button 
+              <button
                 onClick={toggleEdit}
                 className={`
                   w-10 h-10 rounded-full shadow-md flex items-center justify-center transition-all duration-200
-                  ${isEditing 
-                      ? 'bg-cupid-brand text-white hover:bg-cupid-600 rotate-0' 
-                      : 'bg-white/90 backdrop-blur text-gray-600 hover:text-cupid-brand hover:scale-110'
+                  ${isEditing
+                    ? 'bg-cupid-brand text-white hover:bg-cupid-600 rotate-0'
+                    : 'bg-white/90 backdrop-blur text-gray-600 hover:text-cupid-brand hover:scale-110'
                   }
                 `}
-               >
-                 {isEditing ? <Check size={18} /> : <Edit2 size={16} />}
-               </button>
+              >
+                {isEditing ? <Check size={18} /> : <Edit2 size={16} />}
+              </button>
             </div>
           </div>
 
           {/* Next Button */}
-          <button 
+          <button
             onClick={nextSlide}
             disabled={currentIndex === polaroids.length - 1}
             className={`
@@ -163,8 +196,8 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
       {/* Sticky Footer */}
       <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#F5F5F7] via-[#F5F5F7] to-transparent z-20">
         <div className="max-w-md mx-auto w-full">
-          <Button 
-            fullWidth 
+          <Button
+            fullWidth
             onClick={handleSave}
             disabled={isSaving}
             icon={isSaving ? <Loader2 size={20} className="animate-spin" /> : <Download size={20} />}
