@@ -67,6 +67,55 @@ const createGrainPattern = (ctx: CanvasRenderingContext2D) => {
   return ctx.createPattern(canvas, 'repeat');
 };
 
+const drawDustSpecks = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) => {
+  const count = 3 + Math.floor(Math.random() * 4);
+  ctx.save();
+  for (let i = 0; i < count; i++) {
+    const dx = x + Math.random() * w;
+    const dy = y + Math.random() * h;
+    const size = 1 + Math.random() * 2;
+    const opacity = 0.05 + Math.random() * 0.1;
+
+    ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+    ctx.beginPath();
+    ctx.arc(dx, dy, size, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Add a tiny darker speck occasionally
+    if (Math.random() > 0.7) {
+      ctx.fillStyle = `rgba(0, 0, 0, ${opacity * 0.5})`;
+      ctx.beginPath();
+      ctx.arc(dx + 1, dy + 1, size * 0.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+};
+
+const applyLightLeak = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) => {
+  ctx.save();
+  const corner = Math.floor(Math.random() * 4);
+  let lx = x, ly = y;
+
+  if (corner === 1) lx = x + w;
+  if (corner === 2) ly = y + h;
+  if (corner === 3) { lx = x + w; ly = y + h; }
+
+  const radius = w * (0.4 + Math.random() * 0.4);
+  const gradient = ctx.createRadialGradient(lx, ly, 0, lx, ly, radius);
+
+  // Warm vintage light leak colors
+  const opacity = 0.03 + Math.random() * 0.04;
+  gradient.addColorStop(0, `rgba(255, 100, 50, ${opacity})`);
+  gradient.addColorStop(0.5, `rgba(255, 150, 50, ${opacity * 0.6})`);
+  gradient.addColorStop(1, 'rgba(255, 100, 50, 0)');
+
+  ctx.globalCompositeOperation = 'screen';
+  ctx.fillStyle = gradient;
+  ctx.fillRect(x, y, w, h);
+  ctx.restore();
+};
+
 export const generatePolaroidImage = async (
   imageSrc: string,
   caption: string,
@@ -130,6 +179,20 @@ export const generatePolaroidImage = async (
         ctx.fillStyle = gradient;
         ctx.globalCompositeOperation = 'multiply';
         ctx.fillRect(margin, photoY, photoWidth, photoHeight);
+
+        // --- NEW SIGNATURE ANALOG STACKS ---
+
+        // 1. Film Fade (Shadow Lift) - Map blacks to deep charcoal
+        ctx.globalCompositeOperation = 'screen';
+        ctx.fillStyle = 'rgba(15, 15, 25, 0.08)';
+        ctx.fillRect(margin, photoY, photoWidth, photoHeight);
+
+        // 2. Warm Light Leak
+        applyLightLeak(ctx, margin, photoY, photoWidth, photoHeight);
+
+        // 3. Procedural Dust
+        drawDustSpecks(ctx, margin, photoY, photoWidth, photoHeight);
+
         ctx.restore();
 
         const grainPattern = createGrainPattern(ctx);
@@ -149,7 +212,7 @@ export const generatePolaroidImage = async (
 
         const textCenterX = width / 2;
         const textAreaStart = photoY + photoHeight;
-        const captionY = textAreaStart + 300; 
+        const captionY = textAreaStart + 300;
         ctx.fillText(caption, textCenterX, captionY);
 
         ctx.fillStyle = '#888888';
