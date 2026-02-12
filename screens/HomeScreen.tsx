@@ -133,7 +133,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onImagesSelected, recent
         <div className="mb-6 text-center sm:text-left">
           <h2 className="font-serif text-3xl font-bold text-gray-900 mb-2">Capture the spark</h2>
           <p className="text-gray-500 text-sm">Transform your moments into vintage magic.</p>
-          <p className="text-gray-400 text-xs mt-1 italic">Select up to 10 pictures</p>
         </div>
 
         {/* Upload Zone */}
