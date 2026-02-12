@@ -19,7 +19,7 @@ const GridItem: React.FC<GridItemProps> = ({ file, onRemove }) => {
   const [isLoaded, setIsLoaded] = useState(false);
 
   return (
-    <div className="aspect-square relative group rounded-xl overflow-hidden shadow-sm bg-white border border-gray-100">
+    <div className="aspect-[4/5] relative group rounded-xl overflow-hidden shadow-sm bg-white border border-gray-100">
       {/* Shimmer Placeholder */}
       {!isLoaded && (
         <div className="absolute inset-0 shimmer z-0 flex items-center justify-center">
@@ -156,9 +156,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onImagesSelected, recent
             <div
               onClick={() => fileInputRef.current?.click()}
               className={`
-                aspect-square max-w-[320px] mx-auto relative cursor-pointer group transition-transform duration-300
-                ${dragActive ? 'scale-105' : 'hover:scale-[1.02]'}
-              `}
+                  aspect-[4/5] max-w-[320px] mx-auto relative cursor-pointer group transition-transform duration-300
+                  ${dragActive ? 'scale-105' : 'hover:scale-[1.02]'}
+                `}
             >
               <HeartDashed className={`
                 w-full h-full transition-colors duration-300
@@ -184,7 +184,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onImagesSelected, recent
               {selectedFiles.length < 10 && (
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="aspect-square rounded-xl border-2 border-dashed border-cupid-200 flex flex-col items-center justify-center text-cupid-400 hover:bg-cupid-50 hover:border-cupid-300 transition-all gap-2"
+                  className="aspect-[4/5] rounded-xl border-2 border-dashed border-cupid-200 flex flex-col items-center justify-center text-cupid-400 hover:bg-cupid-50 hover:border-cupid-300 transition-all gap-2"
                 >
                   <div className="w-10 h-10 rounded-full bg-cupid-100 flex items-center justify-center">
                     <Plus size={20} className="text-cupid-500" />

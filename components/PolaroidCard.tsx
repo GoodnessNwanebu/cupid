@@ -37,7 +37,7 @@ export const PolaroidCard: React.FC<PolaroidCardProps> = ({
       onClick={onClick}
     >
       {/* Image Area */}
-      <div className={`bg-gray-100 overflow-hidden ${isPreview ? 'mb-6 aspect-[4/5]' : 'mb-2 aspect-square'}`}>
+      <div className={`bg-gray-100 overflow-hidden ${isPreview ? 'mb-6' : 'mb-2'} aspect-[4/5]`}>
         <img
           src={data.image}
           alt="Polaroid memory"
