@@ -33,7 +33,7 @@ const GridItem: React.FC<GridItemProps> = ({ file, onRemove }) => {
         alt="Preview"
         decoding="async"
         onLoad={() => setIsLoaded(true)}
-        className={`w-full h-full object-cover transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+        className={`w-full h-full object-cover object-top transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
       />
 
       {/* Remove Button */}

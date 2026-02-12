@@ -10,9 +10,9 @@ interface PolaroidCardProps {
   onCaptionChange?: (caption: string) => void;
 }
 
-export const PolaroidCard: React.FC<PolaroidCardProps> = ({ 
-  data, 
-  className = '', 
+export const PolaroidCard: React.FC<PolaroidCardProps> = ({
+  data,
+  className = '',
   onClick,
   variant = 'preview',
   isEditing = false,
@@ -28,7 +28,7 @@ export const PolaroidCard: React.FC<PolaroidCardProps> = ({
   }, [isEditing]);
 
   return (
-    <div 
+    <div
       className={`
         bg-[#FFFDF8] shadow-polaroid transform transition-transform duration-300
         ${isPreview ? 'p-4 sm:p-6 rotate-1 hover:rotate-0' : 'p-2 hover:-translate-y-1 cursor-pointer'}
@@ -38,16 +38,16 @@ export const PolaroidCard: React.FC<PolaroidCardProps> = ({
     >
       {/* Image Area */}
       <div className={`bg-gray-100 overflow-hidden ${isPreview ? 'mb-6 aspect-[4/5]' : 'mb-2 aspect-square'}`}>
-        <img 
-          src={data.image} 
-          alt="Polaroid memory" 
-          className="w-full h-full object-cover transition-all duration-500"
+        <img
+          src={data.image}
+          alt="Polaroid memory"
+          className="w-full h-full object-cover object-top transition-all duration-500"
           style={{
-             // Universal Analog Preview:
-             // 1. No Sepia (Preserves colors)
-             // 2. Brightness/Contrast boost (Flash effect)
-             // 3. Saturation boost (Counteracts perceived fade)
-             filter: 'contrast(1.1) brightness(1.1) saturate(1.1)'
+            // Universal Analog Preview:
+            // 1. No Sepia (Preserves colors)
+            // 2. Brightness/Contrast boost (Flash effect)
+            // 3. Saturation boost (Counteracts perceived fade)
+            filter: 'contrast(1.1) brightness(1.1) saturate(1.1)'
           }}
         />
       </div>
@@ -56,7 +56,7 @@ export const PolaroidCard: React.FC<PolaroidCardProps> = ({
       {isPreview && (
         <div className="text-center px-2">
           {isEditing ? (
-            <input 
+            <input
               ref={inputRef}
               type="text"
               value={data.caption}
@@ -70,11 +70,11 @@ export const PolaroidCard: React.FC<PolaroidCardProps> = ({
           <p className="text-xs text-gray-400 font-sans tracking-wide uppercase">{data.date}</p>
         </div>
       )}
-      
+
       {!isPreview && (
-         <div className="text-center pb-1">
-            <p className="font-script text-lg text-gray-800 truncate">{data.caption}</p>
-         </div>
+        <div className="text-center pb-1">
+          <p className="font-script text-lg text-gray-800 truncate">{data.caption}</p>
+        </div>
       )}
     </div>
   );
