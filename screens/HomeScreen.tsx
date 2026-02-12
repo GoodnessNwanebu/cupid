@@ -10,6 +10,43 @@ interface HomeScreenProps {
   recentMemories: PolaroidData[];
 }
 
+interface GridItemProps {
+  file: UploadedFile;
+  onRemove: (id: string, e: React.MouseEvent) => void;
+}
+
+const GridItem: React.FC<GridItemProps> = ({ file, onRemove }) => {
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  return (
+    <div className="aspect-square relative group rounded-xl overflow-hidden shadow-sm bg-white border border-gray-100">
+      {/* Shimmer Placeholder */}
+      {!isLoaded && (
+        <div className="absolute inset-0 shimmer z-0 flex items-center justify-center">
+          <HeartDashed className="w-12 h-12 text-cupid-100 animate-pulse" />
+        </div>
+      )}
+
+      {/* Async Loaded Image */}
+      <img
+        src={file.previewUrl}
+        alt="Preview"
+        decoding="async"
+        onLoad={() => setIsLoaded(true)}
+        className={`w-full h-full object-cover transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+      />
+
+      {/* Remove Button */}
+      <button
+        onClick={(e) => onRemove(file.id, e)}
+        className="absolute top-2 right-2 p-1 bg-black/50 hover:bg-red-500 text-white rounded-full transition-colors backdrop-blur-sm z-10"
+      >
+        <X size={14} />
+      </button>
+    </div>
+  );
+};
+
 export const HomeScreen: React.FC<HomeScreenProps> = ({ onImagesSelected, recentMemories }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
@@ -27,7 +64,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onImagesSelected, recent
       file,
       previewUrl: URL.createObjectURL(file)
     }));
-    
+
     setSelectedFiles(prev => [...prev, ...newFiles]);
   };
 
@@ -82,14 +119,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onImagesSelected, recent
         </div>
 
         {/* Upload Zone */}
-        <div 
+        <div
           className="relative mb-12"
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
         >
-          <input 
-            type="file" 
+          <input
+            type="file"
             ref={fileInputRef}
             className="hidden"
             accept="image/*"
@@ -99,7 +136,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onImagesSelected, recent
 
           {selectedFiles.length === 0 ? (
             // Empty State
-            <div 
+            <div
               onClick={() => fileInputRef.current?.click()}
               className={`
                 aspect-square max-w-[320px] mx-auto relative cursor-pointer group transition-transform duration-300
@@ -110,7 +147,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onImagesSelected, recent
                 w-full h-full transition-colors duration-300
                 ${dragActive ? 'text-cupid-400' : 'text-cupid-200 group-hover:text-cupid-300'}
               `} />
-              
+
               <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
                 <div className="w-16 h-16 bg-cupid-50 rounded-full flex items-center justify-center mb-4 text-cupid-brand shadow-sm group-hover:scale-110 transition-transform duration-300">
                   <Upload className="w-7 h-7" />
@@ -122,49 +159,37 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onImagesSelected, recent
           ) : (
             // Grid State
             <div className="grid grid-cols-2 gap-3 animate-in fade-in zoom-in duration-300">
-               {selectedFiles.map((file) => (
-                 <div key={file.id} className="aspect-square relative group rounded-xl overflow-hidden shadow-sm bg-white border border-gray-100">
-                    <img 
-                      src={file.previewUrl} 
-                      alt="Preview" 
-                      className="w-full h-full object-cover" 
-                    />
-                    <button 
-                      onClick={(e) => removeFile(file.id, e)}
-                      className="absolute top-2 right-2 p-1 bg-black/50 hover:bg-red-500 text-white rounded-full transition-colors backdrop-blur-sm"
-                    >
-                      <X size={14} />
-                    </button>
-                 </div>
-               ))}
-               
-               {/* Add More Button */}
-               <button 
-                  onClick={() => fileInputRef.current?.click()}
-                  className="aspect-square rounded-xl border-2 border-dashed border-cupid-200 flex flex-col items-center justify-center text-cupid-400 hover:bg-cupid-50 hover:border-cupid-300 transition-all gap-2"
-               >
-                  <div className="w-10 h-10 rounded-full bg-cupid-100 flex items-center justify-center">
-                    <Plus size={20} className="text-cupid-500" />
-                  </div>
-                  <span className="text-xs font-medium">Add more</span>
-               </button>
+              {selectedFiles.map((file) => (
+                <GridItem key={file.id} file={file} onRemove={removeFile} />
+              ))}
+
+              {/* Add More Button */}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="aspect-square rounded-xl border-2 border-dashed border-cupid-200 flex flex-col items-center justify-center text-cupid-400 hover:bg-cupid-50 hover:border-cupid-300 transition-all gap-2"
+              >
+                <div className="w-10 h-10 rounded-full bg-cupid-100 flex items-center justify-center">
+                  <Plus size={20} className="text-cupid-500" />
+                </div>
+                <span className="text-xs font-medium">Add more</span>
+              </button>
             </div>
           )}
         </div>
 
-        
+
       </main>
 
       {/* Sticky Footer */}
       <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#F5F5F7] via-[#F5F5F7] to-transparent z-20">
         <div className="max-w-md mx-auto">
-          <Button 
-            fullWidth 
+          <Button
+            fullWidth
             onClick={handleGenerateClick}
             disabled={selectedFiles.length === 0}
           >
-            {selectedFiles.length > 0 
-              ? `Generate ${selectedFiles.length} Polaroid${selectedFiles.length > 1 ? 's' : ''}` 
+            {selectedFiles.length > 0
+              ? `Generate ${selectedFiles.length} Polaroid${selectedFiles.length > 1 ? 's' : ''}`
               : 'Select Photos'}
           </Button>
         </div>
