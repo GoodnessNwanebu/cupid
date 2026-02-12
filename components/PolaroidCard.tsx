@@ -31,13 +31,14 @@ export const PolaroidCard: React.FC<PolaroidCardProps> = ({
     <div
       className={`
         bg-[#FFFDF8] shadow-polaroid transform transition-transform duration-300
-        ${isPreview ? 'p-4 sm:p-6 rotate-1 hover:rotate-0' : 'p-2 hover:-translate-y-1 cursor-pointer'}
+        ${isPreview ? 'p-[6.6%] pb-[26%] rotate-1 hover:rotate-0' : 'p-2 hover:-translate-y-1 cursor-pointer'}
+        aspect-[12/17]
         ${className}
       `}
       onClick={onClick}
     >
       {/* Image Area */}
-      <div className={`bg-gray-100 overflow-hidden ${isPreview ? 'mb-6' : 'mb-2'} aspect-[4/5]`}>
+      <div className={`bg-gray-100 overflow-hidden ${isPreview ? 'mb-0' : 'mb-2'} aspect-[4/5]`}>
         <img
           src={data.image}
           alt="Polaroid memory"

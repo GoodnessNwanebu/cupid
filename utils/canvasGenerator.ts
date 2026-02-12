@@ -78,7 +78,7 @@ export const generatePolaroidImage = async (
     if (!ctx) return reject('No canvas context');
 
     const width = 2400;
-    const height = 3000;
+    const height = 3400;
     canvas.width = width;
     canvas.height = height;
 
@@ -149,13 +149,13 @@ export const generatePolaroidImage = async (
 
         const textCenterX = width / 2;
         const textAreaStart = photoY + photoHeight;
-        const captionY = textAreaStart + 120; 
+        const captionY = textAreaStart + 300; 
         ctx.fillText(caption, textCenterX, captionY);
 
         ctx.fillStyle = '#888888';
         ctx.font = '500 70px "Inter", sans-serif';
         const dateString = date.toUpperCase();
-        const dateY = captionY + 80;
+        const dateY = captionY + 120;
         ctx.save();
         ctx.fillText(dateString.split('').join(' '), textCenterX, dateY);
         ctx.restore();
