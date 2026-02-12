@@ -115,6 +115,23 @@ const applyLightLeak = (ctx: CanvasRenderingContext2D, x: number, y: number, w: 
   ctx.restore();
 };
 
+const drawGrainStreaks = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) => {
+  const streakCount = 1 + Math.floor(Math.random() * 2); // 1-2 subtle streaks
+  ctx.save();
+  ctx.lineWidth = 1 + Math.random() * 1.5;
+  ctx.globalAlpha = 0.04 + Math.random() * 0.06;
+
+  for (let i = 0; i < streakCount; i++) {
+    const sx = x + Math.random() * w;
+    ctx.strokeStyle = Math.random() > 0.5 ? '#FFFFFF' : '#000000';
+    ctx.beginPath();
+    ctx.moveTo(sx, y);
+    ctx.lineTo(sx + (Math.random() * 10 - 5), y + h); // Slight slant
+    ctx.stroke();
+  }
+  ctx.restore();
+};
+
 export const generatePolaroidImage = async (
   imageSrc: string,
   caption: string,
@@ -153,7 +170,7 @@ export const generatePolaroidImage = async (
         // Optimized image for drawing
         const optimImage = getSteppedScaledImage(img, crop.width, crop.height);
 
-        ctx.filter = 'contrast(1.1) brightness(1.1) saturate(1.1)';
+        ctx.filter = 'contrast(1.05) brightness(1.05) saturate(1.15) sepia(0.15)';
         ctx.drawImage(
           img,
           crop.x, crop.y, crop.width, crop.height,
@@ -161,11 +178,11 @@ export const generatePolaroidImage = async (
         );
         ctx.filter = 'none';
 
-        ctx.fillStyle = 'rgba(255, 253, 248, 0.05)';
+        ctx.fillStyle = 'rgba(255, 253, 248, 0.08)';
         ctx.globalCompositeOperation = 'screen';
         ctx.fillRect(margin, photoY, photoWidth, photoHeight);
 
-        ctx.fillStyle = 'rgba(255, 200, 50, 0.04)';
+        ctx.fillStyle = 'rgba(255, 180, 50, 0.08)';
         ctx.globalCompositeOperation = 'overlay';
         ctx.fillRect(margin, photoY, photoWidth, photoHeight);
 
@@ -189,8 +206,9 @@ export const generatePolaroidImage = async (
         // 2. Warm Light Leak
         applyLightLeak(ctx, margin, photoY, photoWidth, photoHeight);
 
-        // 3. Procedural Dust
+        // 3. Procedural Dust & Streaks
         drawDustSpecks(ctx, margin, photoY, photoWidth, photoHeight);
+        drawGrainStreaks(ctx, margin, photoY, photoWidth, photoHeight);
 
         ctx.restore();
 
@@ -198,7 +216,7 @@ export const generatePolaroidImage = async (
         if (grainPattern) {
           ctx.save();
           ctx.globalCompositeOperation = 'overlay';
-          ctx.globalAlpha = 0.20;
+          ctx.globalAlpha = 0.25;
           ctx.fillStyle = grainPattern;
           ctx.fillRect(0, 0, width, height);
           ctx.restore();
