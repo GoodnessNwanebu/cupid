@@ -85,7 +85,7 @@ export const ProcessingScreen: React.FC<ProcessingScreenProps> = ({ onComplete }
               <HeartSolid className="w-3 h-3 text-gray-300" />
               <span className="font-bold">CUPID</span>
            </div>
-           <span>EST. 2024 • VERSION 1.0</span>
+           <span>EST. 2026 • VERSION 1.0</span>
         </div>
       </div>
 
