@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Upload, X, Plus, Image as ImageIcon } from 'lucide-react';
+import { Upload, X, Plus, Image as ImageIcon, Check } from 'lucide-react';
 import { HeartDashed } from '../components/ui/Icons';
 import { Button } from '../components/ui/Button';
 import { PolaroidCard } from '../components/PolaroidCard';
@@ -51,6 +51,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onImagesSelected, recent
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<UploadedFile[]>([]);
+  const [showLimitToast, setShowLimitToast] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -59,7 +60,23 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onImagesSelected, recent
   };
 
   const processFiles = (files: File[]) => {
-    const newFiles: UploadedFile[] = files.map(file => ({
+    const currentCount = selectedFiles.length;
+    const remainingSlot = 10 - currentCount;
+
+    if (remainingSlot <= 0) {
+      setShowLimitToast(true);
+      setTimeout(() => setShowLimitToast(false), 3000);
+      return;
+    }
+
+    let filesToProcess = files;
+    if (files.length > remainingSlot) {
+      filesToProcess = files.slice(0, remainingSlot);
+      setShowLimitToast(true);
+      setTimeout(() => setShowLimitToast(false), 3000);
+    }
+
+    const newFiles: UploadedFile[] = filesToProcess.map(file => ({
       id: Math.random().toString(36).substr(2, 9),
       file,
       previewUrl: URL.createObjectURL(file)
@@ -116,6 +133,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onImagesSelected, recent
         <div className="mb-6 text-center sm:text-left">
           <h2 className="font-serif text-3xl font-bold text-gray-900 mb-2">Capture the spark</h2>
           <p className="text-gray-500 text-sm">Transform your moments into vintage magic.</p>
+          <p className="text-gray-400 text-xs mt-1 italic">Select up to 10 pictures</p>
         </div>
 
         {/* Upload Zone */}
@@ -153,7 +171,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onImagesSelected, recent
                   <Upload className="w-7 h-7" />
                 </div>
                 <h3 className="font-serif text-xl font-bold text-gray-800 mb-1">Tap to Upload</h3>
-                <p className="text-xs text-gray-400">Select multiple photos</p>
+                <p className="text-xs text-gray-400">Select up to 10 pictures</p>
               </div>
             </div>
           ) : (
@@ -164,21 +182,33 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onImagesSelected, recent
               ))}
 
               {/* Add More Button */}
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="aspect-square rounded-xl border-2 border-dashed border-cupid-200 flex flex-col items-center justify-center text-cupid-400 hover:bg-cupid-50 hover:border-cupid-300 transition-all gap-2"
-              >
-                <div className="w-10 h-10 rounded-full bg-cupid-100 flex items-center justify-center">
-                  <Plus size={20} className="text-cupid-500" />
-                </div>
-                <span className="text-xs font-medium">Add more</span>
-              </button>
+              {selectedFiles.length < 10 && (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="aspect-square rounded-xl border-2 border-dashed border-cupid-200 flex flex-col items-center justify-center text-cupid-400 hover:bg-cupid-50 hover:border-cupid-300 transition-all gap-2"
+                >
+                  <div className="w-10 h-10 rounded-full bg-cupid-100 flex items-center justify-center">
+                    <Plus size={20} className="text-cupid-500" />
+                  </div>
+                  <span className="text-xs font-medium">Add more</span>
+                </button>
+              )}
             </div>
           )}
         </div>
 
 
       </main>
+
+      {/* Toast Notification */}
+      {showLimitToast && (
+        <div className="fixed bottom-32 left-1/2 -translate-x-1/2 bg-gray-900/90 backdrop-blur text-white px-6 py-3 rounded-full shadow-xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 z-50 whitespace-nowrap">
+          <div className="w-5 h-5 bg-cupid-brand rounded-full flex items-center justify-center">
+            <Check size={12} className="text-white stroke-[3px]" />
+          </div>
+          <span className="text-sm font-medium">Maximum 10 photos, taking the first ones!</span>
+        </div>
+      )}
 
       {/* Sticky Footer */}
       <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#F5F5F7] via-[#F5F5F7] to-transparent z-20">

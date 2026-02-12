@@ -31,18 +31,19 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
     console.log("Starting batch save/share process...");
 
     try {
-      // Parallelize generation to stay within the "User Activation" window
-      const results = await Promise.all(polaroids.map(async (polaroid) => {
+      // Sequential generation to maintain low memory and high stability
+      const results = [];
+      for (const polaroid of polaroids) {
         const dataUrl = await generatePolaroidImage(polaroid.image, polaroid.caption, polaroid.date);
         const filename = `cupid-${polaroid.caption.toLowerCase().replace(/\s+/g, '-')}-${polaroid.id.slice(-4)}.jpg`;
 
         const res = await fetch(dataUrl);
         const blob = await res.blob();
-        return {
+        results.push({
           dataUrl,
           file: new File([blob], filename, { type: 'image/jpeg' })
-        };
-      }));
+        });
+      }
 
       const files = results.map(r => r.file);
       const dataUrls = results.map(r => r.dataUrl);
