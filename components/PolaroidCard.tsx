@@ -149,22 +149,37 @@ export const PolaroidCard: React.FC<PolaroidCardProps> = ({
                   return layout.map((c, i) => (
                     <div
                       key={i}
-                      className="absolute bg-white shadow-md overflow-hidden"
+                      className="absolute"
                       style={{
                         width: `${c.w * 100}%`,
                         height: `${c.h * 100}%`,
                         top: `${c.y * 100}%`,
                         left: `${c.x * 100}%`,
                         transform: `rotate(${c.rotation}deg)`,
-                        padding: `8% 8% 25% 8%`, // Professional mini-polaroid framing
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.12)'
+                        zIndex: i + 1
                       }}
                     >
+                      {/* Additive White Frame (matches canvas generator padding) */}
+                      <div
+                        className="absolute bg-white shadow-md pointer-events-none"
+                        style={{
+                          top: '-8%',
+                          left: '-8%',
+                          right: '-8%',
+                          bottom: '-25%',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                          zIndex: -1
+                        }}
+                      />
+
+                      {/* Photo Area (The true panning zone) */}
                       <div className="w-full h-full bg-gray-50 overflow-hidden relative">
                         <img
                           src={data.sourceImages![i]}
                           className="w-full h-full object-cover"
-                          style={{ objectPosition: `${(interactiveOffsets?.[i]?.x ?? 0.5) * 100}% ${(interactiveOffsets?.[i]?.y ?? 0.5) * 100}%` }}
+                          style={{
+                            objectPosition: `${(interactiveOffsets?.[i]?.x ?? 0.5) * 100}% ${(interactiveOffsets?.[i]?.y ?? 0.5) * 100}%`
+                          }}
                         />
                       </div>
                     </div>
@@ -192,7 +207,7 @@ export const PolaroidCard: React.FC<PolaroidCardProps> = ({
             <div className="absolute inset-0 bg-[#141423] mix-blend-screen opacity-20" />
 
             {/* Warm Sunlight Hint */}
-            <div className="absolute inset-0 bg-orange-400 mix-blend-overlay opacity-10" />
+            <div className="absolute inset-0 bg-orange-400 mix-blend-overlay opacity-8" />
 
             {/* Subtle Grain Overlay (using noise pattern) */}
             <div className="absolute inset-0 opacity-[0.25] mix-blend-overlay pointer-events-none"

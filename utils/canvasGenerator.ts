@@ -233,7 +233,7 @@ export const generatePolaroidImage = async (
         ctx.globalCompositeOperation = 'screen';
         ctx.fillRect(margin, photoY, photoWidth, photoHeight);
 
-        ctx.fillStyle = 'rgba(255, 180, 50, 0.12)';
+        ctx.fillStyle = 'rgba(255, 180, 50, 0.08)';
         ctx.globalCompositeOperation = 'overlay';
         ctx.fillRect(margin, photoY, photoWidth, photoHeight);
 
