@@ -219,7 +219,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onImagesSelected, recent
           >
             {selectedFiles.length > 0
               ? `Generate ${selectedFiles.length} Polaroid${selectedFiles.length > 1 ? 's' : ''}`
-              : 'Select Photos'}
+              : 'Generate Polaroids'}
           </Button>
         </div>
       </div>
