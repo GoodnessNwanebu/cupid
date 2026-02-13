@@ -165,6 +165,8 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
 
         // Step 2: Apply Frame & Text (Standard Polaroid Wrapper)
         // This ensures the "design" (frame, caption, date) is identical for everything.
+        console.log(`[DEBUG] Generating final polaroid. ID: ${polaroid.id}, Filter: ${polaroid.filter}`);
+
         const finalImage = await generatePolaroidImage(
           rawContentImage,
           polaroid.caption,

@@ -295,6 +295,7 @@ export const generatePolaroidImage = async (
 
         // Apply Mono Filter if requested
         if (filter === 'mono') {
+          console.log('[DEBUG] generatePolaroidImage: Applying mono filter...');
           const tempCanvas = document.createElement('canvas');
           tempCanvas.width = width;
           tempCanvas.height = height;
@@ -307,7 +308,10 @@ export const generatePolaroidImage = async (
             ctx.clearRect(0, 0, width, height);
             ctx.drawImage(tempCanvas, 0, 0);
             ctx.restore();
+            console.log('[DEBUG] generatePolaroidImage: Mono filter applied.');
           }
+        } else {
+          console.log(`[DEBUG] generatePolaroidImage: Filter is ${filter}`);
         }
 
         resolve(canvas.toDataURL('image/jpeg', noFrame ? 0.8 : 0.92));
@@ -517,7 +521,9 @@ export const generateCollagePolaroid = async (
 
 
         // Apply Mono Filter if requested
+        // Apply Mono Filter if requested
         if (filter === 'mono') {
+          console.log('[DEBUG] generateCollagePolaroid: Applying mono filter...');
           const tempCanvas = document.createElement('canvas');
           tempCanvas.width = width;
           tempCanvas.height = height;
@@ -530,7 +536,10 @@ export const generateCollagePolaroid = async (
             ctx.clearRect(0, 0, width, height);
             ctx.drawImage(tempCanvas, 0, 0);
             ctx.restore();
+            console.log('[DEBUG] generateCollagePolaroid: Mono filter applied.');
           }
+        } else {
+          console.log(`[DEBUG] generateCollagePolaroid: Filter is ${filter}`);
         }
 
         resolve(canvas.toDataURL('image/jpeg', 0.9));
