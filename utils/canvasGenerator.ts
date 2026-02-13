@@ -295,21 +295,24 @@ export const generatePolaroidImage = async (
 
         // Apply Mono Filter if requested
         if (filter === 'mono') {
-          console.log('[DEBUG] generatePolaroidImage: Applying mono filter...');
-          const tempCanvas = document.createElement('canvas');
-          tempCanvas.width = width;
-          tempCanvas.height = height;
-          const tempCtx = tempCanvas.getContext('2d');
-          if (tempCtx) {
-            tempCtx.drawImage(canvas, 0, 0);
+          console.log('[DEBUG] generatePolaroidImage: Applying mono filter via composite ops...');
+          ctx.save();
 
-            ctx.save();
-            ctx.filter = 'grayscale(100%) contrast(1.15) brightness(0.95)';
-            ctx.clearRect(0, 0, width, height);
-            ctx.drawImage(tempCanvas, 0, 0);
-            ctx.restore();
-            console.log('[DEBUG] generatePolaroidImage: Mono filter applied.');
-          }
+          // 1. Desaturate (Grayscale)
+          // "saturation" blending mode adopts the saturation of the top layer (black = 0 sat)
+          // while preserving the luma of the bottom layer.
+          ctx.globalCompositeOperation = 'saturation';
+          ctx.fillStyle = '#000000';
+          ctx.fillRect(0, 0, width, height);
+
+          // 2. Slight Contrast/Brightness Adjustment
+          // Overlay with black adds contrast and slight darkening
+          ctx.globalCompositeOperation = 'overlay';
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+          ctx.fillRect(0, 0, width, height);
+
+          ctx.restore();
+          console.log('[DEBUG] generatePolaroidImage: Mono filter applied.');
         } else {
           console.log(`[DEBUG] generatePolaroidImage: Filter is ${filter}`);
         }
@@ -521,23 +524,22 @@ export const generateCollagePolaroid = async (
 
 
         // Apply Mono Filter if requested
-        // Apply Mono Filter if requested
         if (filter === 'mono') {
-          console.log('[DEBUG] generateCollagePolaroid: Applying mono filter...');
-          const tempCanvas = document.createElement('canvas');
-          tempCanvas.width = width;
-          tempCanvas.height = height;
-          const tempCtx = tempCanvas.getContext('2d');
-          if (tempCtx) {
-            tempCtx.drawImage(canvas, 0, 0);
+          console.log('[DEBUG] generateCollagePolaroid: Applying mono filter via composite ops...');
+          ctx.save();
 
-            ctx.save();
-            ctx.filter = 'grayscale(100%) contrast(1.15) brightness(0.95)';
-            ctx.clearRect(0, 0, width, height);
-            ctx.drawImage(tempCanvas, 0, 0);
-            ctx.restore();
-            console.log('[DEBUG] generateCollagePolaroid: Mono filter applied.');
-          }
+          // 1. Desaturate (Grayscale)
+          ctx.globalCompositeOperation = 'saturation';
+          ctx.fillStyle = '#000000';
+          ctx.fillRect(0, 0, width, height);
+
+          // 2. Slight Contrast/Brightness Adjustment
+          ctx.globalCompositeOperation = 'overlay';
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+          ctx.fillRect(0, 0, width, height);
+
+          ctx.restore();
+          console.log('[DEBUG] generateCollagePolaroid: Mono filter applied.');
         } else {
           console.log(`[DEBUG] generateCollagePolaroid: Filter is ${filter}`);
         }
