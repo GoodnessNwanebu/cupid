@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Upload, X, Plus, Image as ImageIcon, Check } from 'lucide-react';
+import { Upload, X, Plus, Image as ImageIcon, Check, LayoutDashboard } from 'lucide-react';
 import { HeartDashed } from '../components/ui/Icons';
 import { Button } from '../components/ui/Button';
 import { PolaroidCard } from '../components/PolaroidCard';
@@ -162,7 +162,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onImagesSelected, recent
             onClick={() => toggleMode(GenerationMode.COLLAGE)}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all ${mode === GenerationMode.COLLAGE ? 'bg-white shadow-sm text-gray-900 border border-gray-100' : 'text-gray-400 hover:text-gray-600'}`}
           >
-            <Upload size={16} />
+            <LayoutDashboard size={16} />
             Collage
           </button>
         </div>

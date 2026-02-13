@@ -1,6 +1,5 @@
 import smartcrop from 'smartcrop';
 import { CollageStyle } from '../types';
-import { COLLAGE_CONFIGS } from './layoutConstants';
 
 /**
  * Helper to perform stepped downscaling.
@@ -233,7 +232,7 @@ export const generatePolaroidImage = async (
         ctx.globalCompositeOperation = 'screen';
         ctx.fillRect(margin, photoY, photoWidth, photoHeight);
 
-        ctx.fillStyle = 'rgba(255, 180, 50, 0.08)';
+        ctx.fillStyle = 'rgba(255, 180, 50, 0.12)';
         ctx.globalCompositeOperation = 'overlay';
         ctx.fillRect(margin, photoY, photoWidth, photoHeight);
 
@@ -318,17 +317,20 @@ export const generateCollagePolaroid = async (
     const ctx = canvas.getContext('2d', { alpha: false });
     if (!ctx) return reject('No canvas context');
 
-    canvas.width = 2080;
-    canvas.height = 2600;
-    const width = 2080;
-    const height = 2600;
+    const width = noFrame ? 2080 : 2400;
+    const height = noFrame ? 2600 : 3400;
+    canvas.width = width;
+    canvas.height = height;
 
+    if (!noFrame) {
+      ctx.fillStyle = '#FAF9F6'; // Creamier Ivory
+      ctx.fillRect(0, 0, width, height);
+    }
 
-
-    const collageWidth = width;
-    const collageHeight = height;
-    const collageY = 0;
-    const margin = 0;
+    const margin = noFrame ? 0 : 160;
+    const collageWidth = noFrame ? width : width - (margin * 2); // 2080
+    const collageHeight = noFrame ? height : Math.floor(collageWidth * 1.25); // 2600 (4:5 ratio)
+    const collageY = noFrame ? 0 : margin;
 
     const loadImages = images.map(src => {
       return new Promise<HTMLImageElement>((res, rej) => {
@@ -345,50 +347,66 @@ export const generateCollagePolaroid = async (
         const slots: { x: number, y: number, w: number, h: number, rotation?: number }[] = [];
         const count = loadedImgs.length;
 
-        const areaWidth = collageWidth - (2 * COLLAGE_CONFIGS.GRID.MARGIN * collageWidth);
-        const areaHeight = collageHeight - (2 * COLLAGE_CONFIGS.GRID.MARGIN * collageHeight);
-        const gutterSize = COLLAGE_CONFIGS.GRID.GUTTER * collageWidth;
-        const gridX = margin + (COLLAGE_CONFIGS.GRID.MARGIN * collageWidth);
-        const gridY = collageY + (COLLAGE_CONFIGS.GRID.MARGIN * collageHeight);
-
         if (style === CollageStyle.GRID) {
+          const gutter = 24;
           if (count === 2) {
-            const h = (areaHeight - gutterSize) / 2;
+            // Top / Bottom Horizontal Split
+            const sw = collageWidth;
+            const sh = (collageHeight - gutter) / 2;
             slots.push(
-              { x: gridX, y: gridY, w: areaWidth, h: h },
-              { x: gridX, y: gridY + h + gutterSize, w: areaWidth, h: h }
+              { x: margin, y: collageY, w: sw, h: sh },
+              { x: margin, y: collageY + sh + gutter, w: sw, h: sh }
             );
           } else if (count === 3) {
-            const hTop = areaHeight * 0.55;
-            const hBottom = areaHeight - hTop - gutterSize;
-            const wBottom = (areaWidth - gutterSize) / 2;
+            // Center Stage: Top Landscape, Bottom Two Squares
+            const th = (collageHeight - gutter) * 0.55;
+            const bh = collageHeight - th - gutter;
+            const bw = (collageWidth - gutter) / 2;
             slots.push(
-              { x: gridX, y: gridY, w: areaWidth, h: hTop },
-              { x: gridX, y: gridY + hTop + gutterSize, w: wBottom, h: hBottom },
-              { x: gridX + wBottom + gutterSize, y: gridY + hTop + gutterSize, w: wBottom, h: hBottom }
+              { x: margin, y: collageY, w: collageWidth, h: th },
+              { x: margin, y: collageY + th + gutter, w: bw, h: bh },
+              { x: margin + bw + gutter, y: collageY + th + gutter, w: bw, h: bh }
             );
-          } else {
-            const w = (areaWidth - gutterSize) / 2;
-            const h = (areaHeight - gutterSize) / 2;
+          } else { // 4 or more
+            const sw = (collageWidth - gutter) / 2;
+            const sh = (collageHeight - gutter) / 2;
             slots.push(
-              { x: gridX, y: gridY, w: w, h: h },
-              { x: gridX + w + gutterSize, y: gridY, w: w, h: h },
-              { x: gridX, y: gridY + h + gutterSize, w: w, h: h },
-              { x: gridX + w + gutterSize, y: gridY + h + gutterSize, w: w, h: h }
+              { x: margin, y: collageY, w: sw, h: sh },
+              { x: margin + sw + gutter, y: collageY, w: sw, h: sh },
+              { x: margin, y: collageY + sh + gutter, w: sw, h: sh },
+              { x: margin + sw + gutter, y: collageY + sh + gutter, w: sw, h: sh }
             );
           }
         } else { // SCRAPBOOK
-          const layout = COLLAGE_CONFIGS.SCRAPBOOK.layouts[count as keyof typeof COLLAGE_CONFIGS.SCRAPBOOK.layouts] || COLLAGE_CONFIGS.SCRAPBOOK.layouts[2];
-
-          layout.forEach(slot => {
-            slots.push({
-              x: margin + (slot.x * collageWidth),
-              y: collageY + (slot.y * collageHeight),
-              w: slot.w * collageWidth,
-              h: slot.h * collageHeight,
-              rotation: slot.rotation
-            });
-          });
+          if (count === 2) {
+            // Diagonal Overlapping
+            const sw = collageWidth * 0.65;
+            const sh = collageHeight * 0.5;
+            slots.push(
+              { x: margin + 50, y: collageY + 50, w: sw, h: sh, rotation: -4 },
+              { x: margin + collageWidth - sw - 50, y: collageY + collageHeight - sh - 50, w: sw, h: sh, rotation: 6 }
+            );
+          } else if (count === 3) {
+            // Cluster Arrangement
+            const sw = collageWidth * 0.55;
+            const sh = collageHeight * 0.45;
+            slots.push(
+              { x: margin + (collageWidth - sw) / 2, y: collageY + 40, w: sw, h: sh, rotation: -3 },
+              { x: margin + 40, y: collageY + collageHeight - sh - 60, w: sw, h: sh, rotation: 4 },
+              { x: margin + collageWidth - sw - 40, y: collageY + collageHeight - sh - 100, w: sw, h: sh, rotation: 2 }
+            );
+          } else {
+            // 4+ images (Original redesign)
+            const tilts = [-5, 4, -3, 6];
+            const sw = collageWidth * 0.45;
+            const sh = collageHeight * 0.4;
+            slots.push(
+              { x: margin + 100, y: collageY + 120, w: sw, h: sh, rotation: tilts[0] },
+              { x: margin + collageWidth - sw - 100, y: collageY + 80, w: sw, h: sh, rotation: tilts[1] },
+              { x: margin + 80, y: collageY + collageHeight - sh - 150, w: sw, h: sh, rotation: tilts[2] },
+              { x: margin + collageWidth - sw - 120, y: collageY + collageHeight - sh - 80, w: sw, h: sh, rotation: tilts[3] }
+            );
+          }
 
           if (!noFrame) {
             drawSimpleDoodles(ctx, margin, collageY, collageWidth, collageHeight);
@@ -469,12 +487,21 @@ export const generateCollagePolaroid = async (
         }
 
         // --- GLOBAL ANALOG EFFECTS ---
-        // --- GLOBAL ANALOG EFFECTS ---
-        ctx.filter = 'contrast(1.05) brightness(1.05) saturate(1.1)';
+        ctx.filter = 'contrast(1.05) brightness(1.05) saturate(1.1) sepia(0.2)';
         ctx.globalCompositeOperation = 'overlay';
         ctx.fillStyle = 'rgba(255, 180, 50, 0.08)';
         ctx.fillRect(margin, collageY, collageWidth, collageHeight);
         ctx.filter = 'none';
+
+        const gradient = ctx.createRadialGradient(
+          width / 2, collageY + collageHeight / 2, collageWidth * 0.4,
+          width / 2, collageY + collageHeight / 2, collageWidth * 0.95
+        );
+        gradient.addColorStop(0, 'rgba(0,0,0,0)');
+        gradient.addColorStop(1, 'rgba(30,20,10,0.2)');
+        ctx.fillStyle = gradient;
+        ctx.globalCompositeOperation = 'multiply';
+        ctx.fillRect(margin, collageY, collageWidth, collageHeight);
 
         // Film Fade
         ctx.globalCompositeOperation = 'screen';
@@ -498,8 +525,26 @@ export const generateCollagePolaroid = async (
           ctx.restore();
         }
 
+        if (!noFrame && style !== CollageStyle.SCRAPBOOK) {
+          // Text (Only for Grid)
+          ctx.textAlign = 'center';
+          ctx.globalCompositeOperation = 'source-over';
+          ctx.fillStyle = '#2a2a2a';
+          ctx.font = '220px "Great Vibes"';
 
-        resolve(canvas.toDataURL('image/jpeg', 0.9));
+          const textCenterX = width / 2;
+          const textAreaStart = collageY + collageHeight;
+          const captionY = textAreaStart + 300;
+          ctx.fillText(caption, textCenterX, captionY);
+
+          ctx.fillStyle = '#888888';
+          ctx.font = '500 70px "Inter", sans-serif';
+          const dateString = date.toUpperCase();
+          const dateY = captionY + 120;
+          ctx.fillText(dateString.split('').join(' '), textCenterX, dateY);
+        }
+
+        resolve(canvas.toDataURL('image/jpeg', noFrame ? 0.8 : 0.9));
         canvas.width = 0;
         canvas.height = 0;
       } catch (err) {
