@@ -177,9 +177,9 @@ export const generatePolaroidImage = async (
   imageSrc: string,
   caption: string,
   date: string,
-  options: { noFrame?: boolean, offset?: { x: number, y: number } } = {}
+  options: { noFrame?: boolean, offset?: { x: number, y: number }, filter?: 'none' | 'mono' } = {}
 ): Promise<string> => {
-  const { noFrame, offset = { x: 0.5, y: 0.5 } } = options;
+  const { noFrame, offset = { x: 0.5, y: 0.5 }, filter = 'none' } = options;
   return new Promise((resolve, reject) => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d', { alpha: false });
@@ -293,6 +293,23 @@ export const generatePolaroidImage = async (
           ctx.restore();
         }
 
+        // Apply Mono Filter if requested
+        if (filter === 'mono') {
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = width;
+          tempCanvas.height = height;
+          const tempCtx = tempCanvas.getContext('2d');
+          if (tempCtx) {
+            tempCtx.drawImage(canvas, 0, 0);
+
+            ctx.save();
+            ctx.filter = 'grayscale(100%) contrast(1.15) brightness(0.95)';
+            ctx.clearRect(0, 0, width, height);
+            ctx.drawImage(tempCanvas, 0, 0);
+            ctx.restore();
+          }
+        }
+
         resolve(canvas.toDataURL('image/jpeg', noFrame ? 0.8 : 0.92));
         canvas.width = 0;
         canvas.height = 0;
@@ -310,9 +327,9 @@ export const generateCollagePolaroid = async (
   caption: string,
   date: string,
   style: CollageStyle = CollageStyle.GRID,
-  options: { noFrame?: boolean, offsets?: { x: number, y: number }[] } = {}
+  options: { noFrame?: boolean, offsets?: { x: number, y: number }[], filter?: 'none' | 'mono' } = {}
 ): Promise<string> => {
-  const { noFrame, offsets } = options;
+  const { noFrame, offsets, filter = 'none' } = options;
   return new Promise((resolve, reject) => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d', { alpha: false });
@@ -498,6 +515,23 @@ export const generateCollagePolaroid = async (
           ctx.restore();
         }
 
+
+        // Apply Mono Filter if requested
+        if (filter === 'mono') {
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = width;
+          tempCanvas.height = height;
+          const tempCtx = tempCanvas.getContext('2d');
+          if (tempCtx) {
+            tempCtx.drawImage(canvas, 0, 0);
+
+            ctx.save();
+            ctx.filter = 'grayscale(100%) contrast(1.15) brightness(0.95)';
+            ctx.clearRect(0, 0, width, height);
+            ctx.drawImage(tempCanvas, 0, 0);
+            ctx.restore();
+          }
+        }
 
         resolve(canvas.toDataURL('image/jpeg', 0.9));
         canvas.width = 0;

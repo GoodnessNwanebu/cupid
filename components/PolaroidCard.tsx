@@ -54,6 +54,9 @@ export const PolaroidCard: React.FC<PolaroidCardProps> = ({
         aspect-[12/17]
         ${className}
       `}
+      style={{
+        filter: data.filter === 'mono' ? 'grayscale(100%) contrast(1.15) brightness(0.95)' : 'none'
+      }}
       onClick={onClick}
     >
       {/* Image Area */}

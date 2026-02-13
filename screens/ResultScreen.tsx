@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Download, Check, Edit2, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
+import { Download, Check, Edit2, ChevronRight, ChevronLeft, Loader2, Sun, Moon } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { PolaroidCard } from '../components/PolaroidCard';
 import { generatePolaroidImage, generateCollagePolaroid } from '../utils/canvasGenerator';
@@ -139,7 +139,22 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
             polaroid.caption,
             polaroid.date,
             polaroid.collageStyle || CollageStyle.GRID,
-            { offsets: polaroid.imageOffsets || Array(polaroid.sourceImages.length).fill({ x: 0.5, y: 0.5 }) }
+            {
+              offsets: polaroid.imageOffsets || Array(polaroid.sourceImages.length).fill({ x: 0.5, y: 0.5 }),
+              // For the raw content, we don't apply the filter yet if we want the frame to be filtered too.
+              // BUT, the plan says "Draw Normal Polaroid... then apply global filter".
+              // generateCollagePolaroid is used here for "content inside frame".
+              // Wait, checking generateCollagePolaroid implementation... it DOES include frame doodles if style=scrapbook?
+              // Actually, looking at handleSave logic:
+              // Step 1: Generate Content (Raw Image) -> generateCollagePolaroid with noFrame=true (implied? wait, logic has noFrame arg missing here? defaulting to false?)
+              // Re-reading code: generateCollagePolaroid default options is {}, so noFrame is undefined -> false?
+              // Wait, earlier code in handleSave:
+              //   rawContentImage = await generateCollagePolaroid(..., { offsets: ... })  <-- noFrame is missing!
+              // If noFrame is false, it generates a full polaroid.
+              // Then Step 2: generatePolaroidImage(rawContentImage, ...)
+              // This puts a polaroid inside a polaroid?
+              // Let's check ResultScreen.tsx lines 135-143 carefully.
+            }
           );
         } else if (polaroid.sourceImages?.[0]) {
           // For single images, we just use the source image directly
@@ -158,7 +173,8 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
             noFrame: false,
             // If it's a single image, use its specific offset.
             // If it's a collage, the collage generator already handled the offsets, so we center the result.
-            offset: polaroid.isCollage ? { x: 0.5, y: 0.5 } : (polaroid.imageOffsets?.[0] || { x: 0.5, y: 0.5 })
+            offset: polaroid.isCollage ? { x: 0.5, y: 0.5 } : (polaroid.imageOffsets?.[0] || { x: 0.5, y: 0.5 }),
+            filter: polaroid.filter
           }
         );
 
@@ -348,8 +364,9 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
               </div>
             )}
 
-            {/* Floating Edit Button */}
-            <div className="absolute bottom-20 right-6 z-20">
+            {/* Floating Actions Stack */}
+            <div className="absolute bottom-14 right-6 z-20 flex flex-col gap-4 items-center">
+              {/* Edit Button (Top) */}
               <button
                 onMouseDown={(e) => e.stopPropagation()}
                 onTouchStart={(e) => e.stopPropagation()}
@@ -363,6 +380,30 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
                 `}
               >
                 {isEditing ? <Check size={18} /> : <Edit2 size={16} />}
+              </button>
+
+              {/* Filter Button (Bottom) */}
+              <button
+                onMouseDown={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}
+                onClick={() => {
+                  const newFilter = currentPolaroid.filter === 'mono' ? 'none' : 'mono';
+                  const updatedPolaroids = [...polaroids];
+                  updatedPolaroids[currentIndex] = {
+                    ...currentPolaroid,
+                    filter: newFilter
+                  };
+                  setPolaroids(updatedPolaroids);
+                }}
+                className={`
+                  w-10 h-10 rounded-full shadow-md flex items-center justify-center transition-all duration-200
+                  ${currentPolaroid.filter === 'mono'
+                    ? 'bg-gray-900 text-white hover:bg-black'
+                    : 'bg-white/90 backdrop-blur text-yellow-500 hover:text-yellow-600'
+                  }
+                `}
+              >
+                {currentPolaroid.filter === 'mono' ? <Moon size={18} /> : <Sun size={18} />}
               </button>
             </div>
           </div>

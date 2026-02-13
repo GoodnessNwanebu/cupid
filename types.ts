@@ -15,6 +15,7 @@ export interface PolaroidData {
   isCollage?: boolean;
   sourceImages?: string[]; // Original images for collages
   imageOffsets?: { x: number, y: number }[]; // Custom focal points (0.0 to 1.0)
+  filter?: 'none' | 'mono';
 }
 
 export interface UploadedFile {
